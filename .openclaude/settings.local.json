@@ -19,7 +19,17 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"Initial commit - Eurotarde v1.0:*)",
       "Bash(git commit -m \"Alterações Eurotarde: admin edita tudo, importação auto, Minhas Chaves, footer José Miguel:*)",
-      "Bash(git commit -m \"Eurotarde v2.0 - Major updates:*)"
+      "Bash(git commit -m \"Eurotarde v2.0 - Major updates:*)",
+      "Bash(taskkill /F /IM python.exe /T)",
+      "Bash(taskkill /f /im python.exe)",
+      "Bash(wmic process:*)",
+      "Bash(curl -s -b /tmp/cookies2.txt http://localhost:8000/admin/users/1/edit)",
+      "Bash(curl -s -b /tmp/cookies2.txt http://localhost:8000/sorteios/my-keys)",
+      "Bash(curl -s -b /tmp/cookies2.txt http://localhost:8000/sorteios)",
+      "Bash(curl:*)",
+      "Bash(Remove-Item -Force C:Projeto2eurotarde.db -ErrorAction SilentlyContinue)",
+      "Bash(COOKIE=\"/tmp/euro_full.txt\" __NEW_LINE_e7ccf2955c4d5c4f__ echo \"=== 1. Login admin ===\" curl -s -c $COOKIE -o /dev/null -w \"%{http_code}\\\\n\" -X POST http://localhost:8000/auth/login -d \"username=admin&password=***REDACTED***\" __NEW_LINE_e7ccf2955c4d5c4f__ echo \"=== 2. Criar utilizador ===\" curl -s -b $COOKIE -c $COOKIE -o /dev/null -w \"Create user: %{http_code}\\\\n\" -X POST http://localhost:8000/admin/users/create -d \"username=testuser&email=test@test.com&password=teste123\" __NEW_LINE_e7ccf2955c4d5c4f__ echo \"=== 3. Ver users list ===\" curl -s -b $COOKIE http://localhost:8000/admin/users)",
+      "Bash(git commit -m \"Eurotarde v3.0 - Novas funcionalidades:*)"
     ]
   }
 }

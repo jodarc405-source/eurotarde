@@ -4,7 +4,7 @@ from sqlalchemy import func
 from models.payment import Payment
 
 
-def create_payment(db: Session, user_id: int, draw_id: int, amount: float, payment_date: date, notes: str | None = None) -> Payment:
+def create_payment(db: Session, user_id: int, draw_id: int | None, amount: float, payment_date: date, notes: str | None = None) -> Payment:
     payment = Payment(
         user_id=user_id,
         draw_id=draw_id,
@@ -55,6 +55,65 @@ def update_payment(db: Session, payment_id: int, amount: float | None = None, pa
         db.commit()
         db.refresh(payment)
     return payment
+
+
+def get_user_weeks_paid(db: Session, user_id: int) -> list[dict]:
+    """Get 52 weeks for a user, marking which are paid based on total payments.
+
+    Each week costs €1. Payments accumulate and extend the paid period.
+    Returns a list of 52 week dicts with: week_number, date_start, date_end, paid
+    """
+    from datetime import date, timedelta
+    from sqlalchemy import func
+    from models.payment import Payment
+
+    # Get total amount paid by this user
+    total_paid = db.query(func.sum(Payment.amount)).filter(
+        Payment.user_id == user_id
+    ).scalar() or 0.0
+
+    # Each €1 = 1 week paid
+    weeks_paid = int(total_paid)
+
+    # Start from the beginning of the current year
+    today = date.today()
+    year_start = date(today.year, 1, 1)
+
+    # Find Monday of week 1
+    monday = year_start - timedelta(days=year_start.weekday())
+
+    weeks = []
+    for i in range(52):
+        week_num = i + 1
+        week_start = monday + timedelta(weeks=i)
+        week_end = week_start + timedelta(days=6)
+        weeks.append({
+            "week_number": week_num,
+            "date_start": week_start.strftime("%d/%m"),
+            "date_end": week_end.strftime("%d/%m"),
+            "paid": week_num <= weeks_paid,
+            "current": week_start <= today <= week_end,
+        })
+
+    return weeks
+
+
+def get_all_users_weeks(db: Session) -> list[dict]:
+    """Get 52-week payment status for all non-admin users."""
+    from models.user import User
+
+    users = db.query(User).filter(User.is_admin == False, User.is_active == True).all()
+    result = []
+    for user in users:
+        weeks = get_user_weeks_paid(db, user.id)
+        paid_count = sum(1 for w in weeks if w["paid"])
+        result.append({
+            "user_id": user.id,
+            "username": user.username,
+            "weeks": weeks,
+            "paid_count": paid_count,
+        })
+    return result
 
 
 def get_monthly_payment_totals(db: Session) -> list[dict]:

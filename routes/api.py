@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from database import get_db
-from services.payment_service import get_total_payments_by_user, get_monthly_payment_totals
+from services.payment_service import get_total_payments_by_user, get_monthly_payment_totals, get_all_users_weeks
 from services.auth_service import get_all_users
 from services.draw_service import get_all_draws
 from models.key import Key
@@ -58,6 +58,12 @@ async def api_draws(
             "prize_total": d.prize_total,
         })
     return JSONResponse(content=result)
+
+
+@router.get("/api/charts/weeks-per-user")
+async def weeks_per_user(db: Session = Depends(get_db)):
+    data = get_all_users_weeks(db)
+    return JSONResponse(content=data)
 
 
 @router.post("/api/keys/check")

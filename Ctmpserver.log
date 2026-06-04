@@ -1,0 +1,64 @@
+C:\Projeto2\main.py:60: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+C:\Projeto2\main.py:68: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("shutdown")
+INFO:     Will watch for changes in these directories: ['C:\\Projeto2']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [8504] using WatchFiles
+INFO:     Started server process [18404]
+INFO:     Waiting for application startup.
+2026-06-04 22:44:03,621 [INFO] main: Starting Eurotarde application...
+2026-06-04 22:44:03,650 [INFO] services.scheduler: Importing draws from 2026...
+2026-06-04 22:44:03,656 [INFO] services.scheduler: Import complete: 0 new draws added from 2026.
+2026-06-04 22:44:03,657 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-06-04 22:44:03,658 [INFO] apscheduler.scheduler: Added job "Update Euromillions Draws" to job store "default"
+2026-06-04 22:44:03,658 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-04 22:44:03,659 [INFO] services.scheduler: Scheduler started. Draws will update Wed & Sun at 00:00.
+2026-06-04 22:44:03,659 [INFO] main: Eurotarde is ready!
+INFO:     Application startup complete.
+INFO:     127.0.0.1:12398 - "GET /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12402 - "GET /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12404 - "POST /auth/login HTTP/1.1" 302 Found
+INFO:     127.0.0.1:12406 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12408 - "GET /sorteios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12410 - "GET /sorteios/my-keys HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12412 - "GET /pagamentos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12414 - "GET /admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12416 - "GET /admin/users/1/edit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12418 - "GET /admin/prizes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12420 - "GET /admin/draws/import HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12422 - "GET /api/charts/prizes-per-user HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12424 - "GET /api/charts/payment-history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12426 - "GET /api/draws HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12428 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12430 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12432 - "GET /admin/users/1/edit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12434 - "GET /sorteios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12437 - "POST /auth/login HTTP/1.1" 302 Found
+INFO:     127.0.0.1:12439 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12441 - "GET /sorteios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12443 - "GET /sorteios/my-keys HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12445 - "GET /pagamentos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12447 - "GET /admin/users HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12449 - "GET /admin/users/1/edit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12451 - "GET /admin/prizes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12453 - "GET /admin/draws/manual HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12455 - "GET /admin/draws/import HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12457 - "GET /api/charts/prizes-per-user HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12459 - "GET /api/charts/payment-history HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12461 - "GET /api/charts/user-stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12463 - "GET /api/draws HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12466 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12468 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12470 - "GET /admin/users/1/edit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12473 - "GET /sorteios HTTP/1.1" 200 OK

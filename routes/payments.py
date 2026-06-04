@@ -37,13 +37,14 @@ async def create_payment_page(request: Request, db: Session = Depends(get_db)):
 async def create_payment_submit(
     request: Request,
     user_id: int = Form(...),
-    draw_id: int = Form(...),
+    draw_id: int = Form(None),
     amount: float = Form(...),
     payment_date: str = Form(...),
     notes: str = Form(None),
     db: Session = Depends(get_db),
 ):
-    create_payment(db, user_id, draw_id, amount, date.fromisoformat(payment_date), notes)
+    did = int(draw_id) if draw_id and draw_id != "0" else None
+    create_payment(db, user_id, did, amount, date.fromisoformat(payment_date), notes)
     return RedirectResponse(url="/pagamentos", status_code=302)
 
 

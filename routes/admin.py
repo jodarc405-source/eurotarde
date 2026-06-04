@@ -4,11 +4,12 @@ from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from database import get_db
-from services.auth_service import get_all_users, update_user_password, get_user_by_id
-from services.draw_service import create_draw, get_draw_by_date
-from services.euromillions_api import fetch_draws_since
+from services.auth_service import get_all_users, update_user_password, get_user_by_id, create_user, hash_password
+from services.draw_service import create_draw, get_draw_by_date, get_all_draws, delete_draw
+from services.euromillions_api import fetch_draws_since, get_known_draws_from_june_2026
 from models.prize import PrizeTier
 from models.user import User
+from models.draw import Draw
 
 router = APIRouter()
 
@@ -20,6 +21,32 @@ async def list_users(request: Request, db: Session = Depends(get_db)):
         "request": request,
         "users": users,
     })
+
+
+@router.get("/admin/users/create", response_class=HTMLResponse)
+async def create_user_page(request: Request):
+    return request.app.state.templates.TemplateResponse("admin/user_create.html", {
+        "request": request,
+    })
+
+
+@router.post("/admin/users/create")
+async def create_user_submit(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    is_admin: bool = Form(False),
+    db: Session = Depends(get_db),
+):
+    existing = db.query(User).filter(User.username == username).first()
+    if not existing:
+        create_user(db, username=username, email=email, password=password)
+        if is_admin:
+            user = db.query(User).filter(User.username == username).first()
+            user.is_admin = True
+            db.commit()
+    return RedirectResponse(url="/admin/users", status_code=302)
 
 
 @router.get("/admin/users/{user_id}/edit", response_class=HTMLResponse)
@@ -121,18 +148,17 @@ async def manual_draw_submit(
 @router.get("/admin/draws/import", response_class=HTMLResponse)
 async def import_draws_page(request: Request, db: Session = Depends(get_db)):
     from models.draw import Draw
-    count = db.query(Draw).count()
-    latest = db.query(Draw).order_by(Draw.draw_date.desc()).first()
+    existing_count = db.query(Draw).count()
+    known_count = len(get_known_draws_from_june_2026())
     return request.app.state.templates.TemplateResponse("admin/draw_import.html", {
         "request": request,
-        "count": count,
-        "latest": latest,
+        "known_count": known_count,
+        "existing_count": existing_count,
     })
 
 
 @router.post("/admin/draws/import")
 async def import_draws_submit(request: Request, db: Session = Depends(get_db)):
-    from services.euromillions_api import get_known_draws_from_june_2026
     draws = get_known_draws_from_june_2026()
     added = 0
     for draw_data in draws:
@@ -148,3 +174,11 @@ async def import_draws_submit(request: Request, db: Session = Depends(get_db)):
             )
             added += 1
     return RedirectResponse(url="/sorteios?imported=" + str(added), status_code=302)
+
+
+@router.post("/admin/draws/clear")
+async def clear_draws_submit(request: Request, db: Session = Depends(get_db)):
+    """Delete all draws from the database."""
+    db.query(Draw).delete()
+    db.commit()
+    return RedirectResponse(url="/admin/draws/import", status_code=302)

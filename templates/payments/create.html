@@ -21,9 +21,9 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Sorteio</label>
-                        <select name="draw_id" class="form-select" required>
-                            <option value="">Selecione</option>
+                        <label class="form-label">Sorteio <small class="text-muted">(opcional - deixe em branco para pagamento de quota)</small></label>
+                        <select name="draw_id" class="form-select">
+                            <option value="0">— Pagamento de Quota (sem sorteio) —</option>
                             {% for draw in draws %}
                             <option value="{{ draw.id }}">{{ draw.draw_date.strftime('%d/%m/%Y') }}</option>
                             {% endfor %}

@@ -45,6 +45,40 @@ def init_db():
             conn.commit()
         logger.info("Migration: added 'label' column to keys table")
 
+    # Migration: make payments.draw_id nullable (was NOT NULL, need NULL for quota payments)
+    payments_cols = [col["name"] for col in inspector.get_columns("payments")]
+    if "draw_id" in payments_cols:
+        # Check if draw_id is NOT NULL by trying to insert NULL — recreate table if needed
+        # SQLite doesn't support ALTER COLUMN, so we use table recreation
+        with engine.connect() as conn:
+            # Check current schema
+            result = conn.execute(text("PRAGMA table_info(payments)")).fetchall()
+            for col in result:
+                if col[1] == "draw_id" and col[3] == 1:  # notnull=1 means NOT NULL
+                    logger.info("Migration: making payments.draw_id nullable...")
+                    # Recreate payments table with nullable draw_id
+                    conn.execute(text("""
+                        CREATE TABLE IF NOT EXISTS payments_new (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL REFERENCES users(id),
+                            draw_id INTEGER REFERENCES draws(id),
+                            amount FLOAT NOT NULL,
+                            payment_date DATE NOT NULL,
+                            notes VARCHAR(500),
+                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                        )
+                    """))
+                    conn.execute(text("""
+                        INSERT INTO payments_new (id, user_id, draw_id, amount, payment_date, notes, created_at, updated_at)
+                        SELECT id, user_id, draw_id, amount, payment_date, notes, created_at, updated_at FROM payments
+                    """))
+                    conn.execute(text("DROP TABLE payments"))
+                    conn.execute(text("ALTER TABLE payments_new RENAME TO payments"))
+                    conn.commit()
+                    logger.info("Migration: payments.draw_id is now nullable")
+                    break
+
     db = SessionLocal()
     try:
         # Seed admin user if not exists

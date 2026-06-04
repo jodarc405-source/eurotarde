@@ -9,7 +9,7 @@ class Payment(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    draw_id = Column(Integer, ForeignKey("draws.id"), nullable=False)
+    draw_id = Column(Integer, ForeignKey("draws.id"), nullable=True)
     amount = Column(Float, nullable=False)
     payment_date = Column(Date, nullable=False)
     notes = Column(String(500), nullable=True)
