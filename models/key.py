@@ -15,6 +15,7 @@ class Key(Base):
     matched_numbers = Column(Integer, default=0)
     matched_stars = Column(Integer, default=0)
     prize_won = Column(Float, default=0.0)
+    label = Column(String(100), nullable=True, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="keys")

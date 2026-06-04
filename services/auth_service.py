@@ -51,12 +51,3 @@ def update_user_password(db: Session, user_id: int, new_password: str) -> User |
         db.commit()
         db.refresh(user)
     return user
-
-
-def deactivate_user(db: Session, user_id: int) -> bool:
-    user = db.query(User).filter(User.id == user_id).first()
-    if user:
-        user.is_active = False
-        db.commit()
-        return True
-    return False

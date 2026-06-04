@@ -3,6 +3,22 @@
 {% block content %}
 <h2 class="mb-4"><i class="fas fa-ticket me-2"></i>Sorteios do Euromilhões</h2>
 
+<!-- Admin buttons -->
+{% if request.session.get('is_admin') %}
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a href="/admin/draws/manual" class="btn btn-success">
+        <i class="fas fa-plus me-1"></i>Inserir Sorteio Manual
+    </a>
+    <a href="/admin/draws/import" class="btn btn-warning text-dark">
+        <i class="fas fa-download me-1"></i>Importar Sorteios Automático
+    </a>
+    <a href="/sorteios/my-keys" class="btn btn-info text-white">
+        <i class="fas fa-key me-1"></i>Minhas Chaves
+    </a>
+</div>
+{% endif %}
+
+<!-- Filters -->
 <div class="card shadow mb-4">
     <div class="card-header bg-primary-euro text-white">
         <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
@@ -39,14 +55,14 @@
     </div>
 </div>
 
-{% if request.session.get('is_admin') %}
-<div class="mb-3">
-    <a href="/admin/draws/manual" class="btn btn-success">
-        <i class="fas fa-plus me-1"></i>Inserir Sorteio Manual
-    </a>
+{% if imported %}
+<div class="alert alert-success alert-dismissible fade show">
+    <i class="fas fa-check-circle me-2"></i>{{ imported }} sorteio(s) importado(s) com sucesso!
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 {% endif %}
 
+<!-- Draws Table -->
 <div class="card shadow">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -57,31 +73,45 @@
                         <th>Números</th>
                         <th>Estrelas</th>
                         <th>Jackpot (€)</th>
+                        <th>Prémio Chave</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for draw in draws %}
-                    <tr>
+                    <tr {% if draw.id in draw_results %}class="table-success"{% endif %}>
                         <td>{{ draw.draw_date.strftime('%d/%m/%Y') }}</td>
                         <td>
                             {% for n in draw.numbers|fromjson %}
-                            <span class="euro-ball">{{ n }}</span>
+                            <span class="euro-ball {% if draw.id in draw_results and n in draw_results[draw.id][0].draw_numbers %}ball-match{% endif %}">{{ n }}</span>
                             {% endfor %}
                         </td>
                         <td>
                             {% for s in draw.stars|fromjson %}
-                            <span class="euro-star"><i class="fas fa-star"></i> {{ s }}</span>
+                            <span class="euro-star {% if draw.id in draw_results and s in draw_results[draw.id][0].draw_stars %}star-match{% endif %}">{{ s }}</span>
                             {% endfor %}
                         </td>
                         <td>{{ '{:,.0f}'.format(draw.prize_total) }}</td>
+                        <td>
+                            {% if draw.id in draw_results %}
+                            <span class="badge bg-success"><i class="fas fa-trophy me-1"></i>
+                                {{ draw_results[draw.id][0].matched_numbers }}N + {{ draw_results[draw.id][0].matched_stars }}E
+                                — {{ '{:,.0f}'.format(draw_results[draw.id][0].prize) }}€
+                            </span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
                         <td>
                             <a href="/sorteios/{{ draw.id }}" class="btn btn-sm btn-outline-primary">Detalhes</a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">Nenhum sorteio encontrado.</td>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox" style="font-size:2rem;"></i>
+                            <p class="mt-2">Nenhum sorteio encontrado.</p>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

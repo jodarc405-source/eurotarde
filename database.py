@@ -1,7 +1,10 @@
 import json
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from config import get_settings
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
@@ -25,11 +28,22 @@ def get_db():
 
 
 def init_db():
-    """Create all tables and seed default data."""
+    """Create all tables, add missing columns, and seed default data."""
     from models import User, PrizeTier
     from services.auth_service import hash_password
 
+    # Create all tables
     Base.metadata.create_all(bind=engine)
+
+    # Migration: add 'label' column to keys table if missing
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    existing_columns = [col["name"] for col in inspector.get_columns("keys")]
+    if "label" not in existing_columns:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE keys ADD COLUMN label VARCHAR(100) DEFAULT ''"))
+            conn.commit()
+        logger.info("Migration: added 'label' column to keys table")
 
     db = SessionLocal()
     try:
