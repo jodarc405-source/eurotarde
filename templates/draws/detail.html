@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Sorteio {{ draw.draw_date }} - Eurotarde{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-ticket me-2"></i>Detalhe do Sorteio</h2>
+
+<div class="card shadow mb-4">
+    <div class="card-header bg-primary-euro text-white">
+        <h4 class="mb-0">Sorteio de {{ draw.draw_date.strftime('%d/%m/%Y') }}</h4>
+    </div>
+    <div class="card-body text-center">
+        <div class="mb-3">
+            {% for n in draw_numbers %}
+            <span class="euro-ball-lg">{{ n }}</span>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {% for s in draw_stars %}
+            <span class="euro-star-lg"><i class="fas fa-star"></i> {{ s }}</span>
+            {% endfor %}
+        </div>
+        <p class="text-muted">Jackpot: <strong>{{ '{:,.0f}'.format(draw.prize_total) }} €</strong></p>
+        {% if draw.is_manual %}
+        <span class="badge bg-warning text-dark">Inserido manualmente</span>
+        {% endif %}
+    </div>
+</div>
+<a href="/sorteios" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Voltar</a>
+{% endblock %}

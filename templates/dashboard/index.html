@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Eurotarde{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-chart-line me-2"></i>Dashboard</h2>
+
+<div class="row mb-4" id="stats-cards">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white shadow">
+            <div class="card-body text-center">
+                <h3 id="stat-users">-</h3>
+                <p class="mb-0">Utilizadores</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white shadow">
+            <div class="card-body text-center">
+                <h3 id="stat-draws">-</h3>
+                <p class="mb-0">Sorteios</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark shadow">
+            <div class="card-body text-center">
+                <h3 id="stat-prizes">-</h3>
+                <p class="mb-0">Prémios Pagos (€)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white shadow">
+            <div class="card-body text-center">
+                <h3 id="stat-payments">-</h3>
+                <p class="mb-0">Pagamentos (€)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary-euro text-white">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Prémios por Utilizador</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="prizesChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary-euro text-white">
+                <h5 class="mb-0"><i class="fas fa-euro-sign me-2"></i>Histórico de Pagamentos</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="paymentsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/charts.js"></script>
+{% endblock %}

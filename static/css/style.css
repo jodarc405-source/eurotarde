@@ -1,0 +1,271 @@
+/* Eurotarde - Custom Styles */
+
+:root {
+    --euro-blue: #003366;
+    --euro-blue-light: #004080;
+    --euro-gold: #FFD700;
+    --euro-gold-dark: #DAA520;
+    --euro-red: #CC0000;
+    --euro-green: #008800;
+}
+
+body {
+    background-color: #f0f2f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Navbar */
+.bg-primary-euro {
+    background: linear-gradient(135deg, var(--euro-blue) 0%, var(--euro-blue-light) 100%) !important;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    color: var(--euro-gold) !important;
+}
+
+.navbar .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: color 0.2s;
+}
+
+.navbar .nav-link:hover {
+    color: var(--euro-gold) !important;
+}
+
+/* Buttons */
+.btn-primary-euro {
+    background: linear-gradient(135deg, var(--euro-blue) 0%, var(--euro-blue-light) 100%);
+    border: none;
+    color: white;
+}
+
+.btn-primary-euro:hover {
+    background: linear-gradient(135deg, var(--euro-blue-light) 0%, var(--euro-blue) 100%);
+    color: var(--euro-gold);
+}
+
+/* Euro Balls - Number balls (used in draws/list.html) */
+.number-ball {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #fff9e6, #ffe066);
+    border: 2px solid var(--euro-gold-dark);
+    color: var(--euro-blue);
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin: 0 2px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.number-ball-lg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #fff9e6, #ffe066);
+    border: 3px solid var(--euro-gold-dark);
+    color: var(--euro-blue);
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin: 0 4px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Euro Stars (used in draws/list.html) */
+.star-ball {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    color: var(--euro-gold);
+    background: linear-gradient(145deg, var(--euro-blue), var(--euro-blue-light));
+    border: 2px solid var(--euro-gold);
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.75rem;
+    margin: 0 2px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.star-ball-lg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    color: var(--euro-gold);
+    background: linear-gradient(145deg, var(--euro-blue), var(--euro-blue-light));
+    border: 3px solid var(--euro-gold);
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin: 0 4px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Legacy euro-ball classes (used in agent-created templates) */
+.euro-ball {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #fff9e6, #ffe066);
+    border: 2px solid var(--euro-gold-dark);
+    color: var(--euro-blue);
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin: 0 2px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.euro-ball-lg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #fff9e6, #ffe066);
+    border: 3px solid var(--euro-gold-dark);
+    color: var(--euro-blue);
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin: 0 4px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+.euro-star {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    color: var(--euro-gold);
+    background: linear-gradient(145deg, var(--euro-blue), var(--euro-blue-light));
+    border: 2px solid var(--euro-gold);
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.75rem;
+    margin: 0 2px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.euro-star-lg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    color: var(--euro-gold);
+    background: linear-gradient(145deg, var(--euro-blue), var(--euro-blue-light));
+    border: 3px solid var(--euro-gold);
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin: 0 4px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Match highlighting (used in check_keys.html) */
+.ball-match, .star-match {
+    background: linear-gradient(145deg, #00cc00, #009900) !important;
+    border-color: #006600 !important;
+    color: white !important;
+    animation: pulse-ball 0.5s ease;
+}
+
+.ball-no-match, .star-no-match {
+    opacity: 0.4;
+}
+
+@keyframes pulse-ball {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+/* Stats / Summary cards */
+.summary-card {
+    border-radius: 12px;
+    transition: transform 0.2s;
+}
+
+.summary-card:hover {
+    transform: translateY(-3px);
+}
+
+#stats-cards .card {
+    border-radius: 12px;
+    transition: transform 0.2s;
+}
+
+#stats-cards .card:hover {
+    transform: translateY(-3px);
+}
+
+/* Table */
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+/* Form controls */
+.form-control:focus, .form-select:focus {
+    border-color: var(--euro-blue);
+    box-shadow: 0 0 0 0.2rem rgba(0, 51, 102, 0.15);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .number-ball, .star-ball, .euro-ball, .euro-star {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+    .number-ball-lg, .star-ball-lg, .euro-ball-lg, .euro-star-lg {
+        width: 42px;
+        height: 42px;
+        font-size: 0.9rem;
+    }
+}

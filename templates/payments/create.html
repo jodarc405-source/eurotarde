@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Novo Pagamento - Eurotarde{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-plus me-2"></i>Novo Pagamento</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary-euro text-white">
+                <h5 class="mb-0">Dados do Pagamento</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/pagamentos/create">
+                    <div class="mb-3">
+                        <label class="form-label">Utilizador</label>
+                        <select name="user_id" class="form-select" required>
+                            <option value="">Selecione</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sorteio</label>
+                        <select name="draw_id" class="form-select" required>
+                            <option value="">Selecione</option>
+                            {% for draw in draws %}
+                            <option value="{{ draw.id }}">{{ draw.draw_date.strftime('%d/%m/%Y') }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Valor (€)</label>
+                        <input type="number" step="0.01" name="amount" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data do Pagamento</label>
+                        <input type="date" name="payment_date" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notas</label>
+                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success me-2">Guardar</button>
+                    <a href="/pagamentos" class="btn btn-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Verificar Chave - Eurotarde{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-search me-2"></i>Verificar Chave Euromilhões</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary-euro text-white">
+                <h5 class="mb-0">Inserir Chave</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/sorteios/check">
+                    <div class="mb-3">
+                        <label class="form-label">Sorteio</label>
+                        <select name="draw_id" class="form-select" required>
+                            <option value="">Selecione um sorteio</option>
+                            {% for d in draws %}
+                            <option value="{{ d.id }}">{{ d.draw_date.strftime('%d/%m/%Y') }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Números (1-50)</label>
+                        <div class="row g-2">
+                            {% for i in range(1, 6) %}
+                            <div class="col">
+                                <select name="n{{ i }}" class="form-select" required>
+                                    <option value="{{ i }}">{{ i }}</option>
+                                    {% for n in range(1, 51) %}
+                                    <option value="{{ n }}">{{ n }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Estrelas (1-12)</label>
+                        <div class="row g-2">
+                            <div class="col">
+                                <select name="s1" class="form-select" required>
+                                    {% for s in range(1, 13) %}
+                                    <option value="{{ s }}">{{ s }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col">
+                                <select name="s2" class="form-select" required>
+                                    {% for s in range(1, 13) %}
+                                    <option value="{{ s }}">{{ s }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary-euro w-100">
+                        <i class="fas fa-check me-1"></i>Verificar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        {% if result %}
+        <div class="card shadow mb-4 {% if result.prize > 0 %}border-success{% endif %}">
+            <div class="card-header {% if result.prize > 0 %}bg-success{% else %}bg-secondary{% endif %} text-white">
+                <h5 class="mb-0">
+                    {% if result.prize > 0 %}
+                    <i class="fas fa-trophy me-2"></i>PARABÉNS! Ganhou prémio!
+                    {% else %}
+                    <i class="fas fa-times-circle me-2"></i>Sem prémio
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <h6>A sua chave:</h6>
+                <div class="mb-2">
+                    {% for n in result.user_numbers %}
+                    <span class="euro-ball {% if n in result.draw_numbers %}ball-match{% else %}ball-no-match{% endif %}">{{ n }}</span>
+                    {% endfor %}
+                </div>
+                <div class="mb-3">
+                    {% for s in result.user_stars %}
+                    <span class="euro-star {% if s in result.draw_stars %}star-match{% else %}star-no-match{% endif %}"><i class="fas fa-star"></i> {{ s }}</span>
+                    {% endfor %}
+                </div>
+                <hr>
+                <h6>Sorteio:</h6>
+                <div class="mb-2">
+                    {% for n in result.draw_numbers %}
+                    <span class="euro-ball">{{ n }}</span>
+                    {% endfor %}
+                </div>
+                <div class="mb-3">
+                    {% for s in result.draw_stars %}
+                    <span class="euro-star"><i class="fas fa-star"></i> {{ s }}</span>
+                    {% endfor %}
+                </div>
+                <hr>
+                <p>Acertos: <strong>{{ result.matched_numbers }}</strong> números + <strong>{{ result.matched_stars }}</strong> estrelas</p>
+                {% if result.prize > 0 %}
+                <h3 class="text-success"><i class="fas fa-euro-sign"></i> {{ '{:,.2f}'.format(result.prize) }}</h3>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="card shadow mb-4">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="fas fa-key fa-3x mb-3"></i>
+                <p>Insira a sua chave e selecione um sorteio para verificar.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

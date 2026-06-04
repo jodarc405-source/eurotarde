@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(curl -s http://localhost:8000/docs)",
+      "Bash(curl -s http://localhost:8000/openapi.json)",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(grep:*)",
+      "Bash(curl -s http://localhost:8000/auth/login)",
+      "Bash(powershell -Command \"Get-Process python | Stop-Process -Force\")",
+      "Bash(curl -s http://localhost:8000/api/charts/prizes-per-user)",
+      "Bash(curl -s http://localhost:8000/api/charts/user-stats)",
+      "Bash(curl -s http://localhost:8000/api/charts/payment-history)",
+      "Bash(curl -v http://localhost:8000/api/charts/user-stats)",
+      "Bash(curl -s http://localhost:8000/api/charts/user-stats -H \"Accept: application/json\")",
+      "Bash(powershell -Command \"Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"Initial commit - Eurotarde v1.0:*)"
+    ]
+  }
+}

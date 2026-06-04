@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Entrar - Eurotarde{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header bg-primary-euro text-white text-center">
+                <h3><i class="fas fa-sign-in-alt me-2"></i>Entrar</h3>
+            </div>
+            <div class="card-body p-4">
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="POST" action="/auth/login">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Utilizador</label>
+                        <input type="text" class="form-control" id="username" name="username" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Palavra-passe</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary-euro w-100">Entrar</button>
+                </form>
+                <hr>
+                <p class="text-center mb-0">Não tem conta? <a href="/auth/register">Registe-se</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
