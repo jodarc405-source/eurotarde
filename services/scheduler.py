@@ -14,20 +14,11 @@ scheduler = BackgroundScheduler()
 
 def import_draws_from_june_2026():
     """Import all draws from 2026-01-01 onwards. Runs on startup."""
-    import asyncio
     logger.info("Importing draws from 2026...")
     try:
-        try:
-            loop = asyncio.get_running_loop()
-            # We're inside an async context, use nest_asyncio or skip
-            logger.warning("Cannot import draws: already inside an async event loop. Use the admin import page instead.")
-            return
-        except RuntimeError:
-            pass
-
-        loop = asyncio.new_event_loop()
-        draws = loop.run_until_complete(fetch_draws_since(date(2026, 1, 1)))
-        loop.close()
+        # Use synchronous fallback data directly to avoid event loop conflicts
+        from services.euromillions_api import get_known_draws_from_june_2026
+        draws = get_known_draws_from_june_2026()
 
         db = SessionLocal()
         added = 0
@@ -58,6 +49,13 @@ def update_draws():
     """Job to update Euromillions draws. Called by scheduler every Wed & Sun."""
     import asyncio
     try:
+        try:
+            loop = asyncio.get_running_loop()
+            logger.warning("update_draws: already inside an async event loop, skipping.")
+            return
+        except RuntimeError:
+            pass
+
         loop = asyncio.new_event_loop()
         draw_data = loop.run_until_complete(fetch_latest_draw())
         loop.close()

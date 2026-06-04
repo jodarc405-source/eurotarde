@@ -18,7 +18,8 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"Initial commit - Eurotarde v1.0:*)",
-      "Bash(git commit -m \"Alterações Eurotarde: admin edita tudo, importação auto, Minhas Chaves, footer José Miguel:*)"
+      "Bash(git commit -m \"Alterações Eurotarde: admin edita tudo, importação auto, Minhas Chaves, footer José Miguel:*)",
+      "Bash(git commit -m \"Eurotarde v2.0 - Major updates:*)"
     ]
   }
 }
