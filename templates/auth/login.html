@@ -1,29 +1,52 @@
 {% extends "base.html" %}
 {% block title %}Entrar - Eurotarde{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-header bg-primary-euro text-white text-center">
-                <h3><i class="fas fa-sign-in-alt me-2"></i>Entrar</h3>
-            </div>
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4 col-sm-8">
+        <div class="card shadow-lg" style="border-color: rgba(99,102,241,0.2) !important;">
             <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <div class="mb-3" style="font-size: 2.5rem;">
+                        <i class="fas fa-star" style="color: var(--accent); filter: drop-shadow(0 0 12px rgba(245,158,11,0.5));"></i>
+                    </div>
+                    <h4 style="font-weight: 800; letter-spacing: -0.02em;">Eurotarde</h4>
+                    <p class="text-muted" style="font-size: 0.85rem;">Inicia sessão para continuar</p>
+                </div>
+
                 {% if error %}
-                <div class="alert alert-danger">{{ error }}</div>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
                 {% endif %}
+
                 <form method="POST" action="/auth/login">
                     <div class="mb-3">
-                        <label for="username" class="form-label">Utilizador</label>
-                        <input type="text" class="form-control" id="username" name="username" required autofocus>
+                        <label class="form-label">Utilizador</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: var(--bg-glass); border-color: var(--bg-glass-border); color: var(--text-muted);">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <input type="text" name="username" class="form-control" placeholder="Nome de utilizador" required autofocus>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Palavra-passe</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                    <div class="mb-4">
+                        <label class="form-label">Palavra-passe</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: var(--bg-glass); border-color: var(--bg-glass-border); color: var(--text-muted);">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <input type="password" name="password" class="form-control" placeholder="Palavra-passe" required>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary-euro w-100">Entrar</button>
+                    <button type="submit" class="btn btn-primary w-100 mb-3" style="padding: 0.7rem;">
+                        <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                    </button>
                 </form>
-                <hr>
-                <p class="text-center mb-0">Não tem conta? <a href="/auth/register">Registe-se</a></p>
+                <div class="text-center">
+                    <span class="text-muted" style="font-size: 0.85rem;">Não tens conta? </span>
+                    <a href="/auth/register" style="font-weight: 600;">Registar</a>
+                </div>
             </div>
         </div>
     </div>

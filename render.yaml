@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: eurotarde
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ***REDACTED***
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///eurotarde.db
+      - key: ADMIN_DEFAULT_USERNAME
+        value: admin
+      - key: ADMIN_DEFAULT_PASSWORD
+        value: ***REDACTED***
+      - key: DRAW_UPDATE_HOUR
+        value: "0"
+      - key: DRAW_UPDATE_MINUTE
+        value: "0"
+      - key: SESSION_MAX_AGE
+        value: "3600"

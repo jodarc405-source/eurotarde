@@ -1,50 +1,45 @@
 {% extends "base.html" %}
 {% block title %}Minhas Chaves - Eurotarde{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="fas fa-key me-2"></i>Minhas Chaves</h2>
+<h2 class="page-title"><i class="fas fa-key"></i> Minhas Chaves</h2>
 
 <!-- Add new key form -->
 <div class="card shadow mb-4">
-    <div class="card-header bg-primary-euro text-white">
-        <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Adicionar Nova Chave</h5>
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Nova Chave</h5>
     </div>
     <div class="card-body">
-        <form method="POST" action="/sorteios/my-keys/create" class="row g-3 align-items-end">
-            <div class="col-md-2">
-                <label class="form-label">Números</label>
-                <div class="row g-1">
-                    {% for i in range(1, 6) %}
-                    <div class="col">
-                        <select name="n{{ i }}" class="form-select form-select-sm" required>
-                            {% for n in range(1, 51) %}
-                            <option value="{{ n }}">{{ n }}</option>
-                            {% endfor %}
-                        </select>
+        <form method="POST" action="/sorteios/my-keys/create">
+            <div class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label">Números</label>
+                    <div class="d-flex gap-1">
+                        {% for i in range(1, 6) %}
+                        <input type="number" name="n{{ i }}" min="1" max="50" required
+                               class="form-control form-control-sm text-center"
+                               style="width: 46px; padding: 0.35rem;">
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
-            </div>
-            <div class="col-md-1">
-                <label class="form-label">Estrelas</label>
-                <select name="s1" class="form-select form-select-sm mb-1" required>
-                    {% for s in range(1, 13) %}
-                    <option value="{{ s }}">{{ s }}</option>
-                    {% endfor %}
-                </select>
-                <select name="s2" class="form-select form-select-sm" required>
-                    {% for s in range(1, 13) %}
-                    <option value="{{ s }}">{{ s }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Etiqueta</label>
-                <input type="text" name="label" class="form-control form-control-sm" placeholder="Ex: Chave 1">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-success btn-sm">
-                    <i class="fas fa-plus me-1"></i>Adicionar
-                </button>
+                <div class="col-auto">
+                    <label class="form-label">Estrelas</label>
+                    <div class="d-flex gap-1">
+                        {% for i in range(1, 3) %}
+                        <input type="number" name="s{{ i }}" min="1" max="12" required
+                               class="form-control form-control-sm text-center"
+                               style="width: 46px; padding: 0.35rem;">
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col">
+                    <label class="form-label">Etiqueta</label>
+                    <input type="text" name="label" class="form-control form-control-sm" placeholder="Ex: Chave da Sorte">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-1"></i>Adicionar
+                    </button>
+                </div>
             </div>
         </form>
     </div>
@@ -53,19 +48,19 @@
 <!-- My Keys list with results -->
 {% if all_results %}
 {% for key_id, data in all_results.items() %}
-<div class="card shadow mb-4 {% if data.wins %}border-success{% endif %}">
-    <div class="card-header d-flex justify-content-between align-items-center {% if data.wins %}bg-success text-white{% else %}bg-primary-euro text-white{% endif %}">
+<div class="card shadow mb-4 {% if data.wins %}border-success{% endif %}" style="{% if data.wins %}border-color: rgba(16,185,129,0.3) !important;{% endif %}">
+    <div class="card-header d-flex justify-content-between align-items-center" style="{% if data.wins %}background: rgba(16,185,129,0.1) !important; color: var(--success-light);{% else %}background: var(--bg-glass);{% endif %}">
         <h5 class="mb-0">
             <i class="fas fa-key me-2"></i>
             {% if data.key.label %}{{ data.key.label }}{% else %}Chave {{ key_id }}{% endif %}
-            —
-            {% for n in data.key.numbers|fromjson %}{{ n }} {% endfor %}
-            + {% for s in data.key.stars|fromjson %}{{ s }} {% endfor %}
+            &mdash;
+            {% for n in data.key.numbers|fromjson %}<span class="euro-ball" style="width:30px;height:30px;font-size:0.7rem;">{{ n }}</span> {% endfor %}
+            + {% for s in data.key.stars|fromjson %}<span class="euro-star" style="width:30px;height:30px;font-size:0.7rem;"><i class="fas fa-star"></i>{{ s }}</span> {% endfor %}
         </h5>
-        <div>
+        <div class="d-flex align-items-center gap-2">
             {% if data.total_prize > 0 %}
-            <span class="badge bg-warning text-dark me-2">
-                <i class="fas fa-trophy me-1"></i>Total: {{ '{:,.2f}'.format(data.total_prize) }} €
+            <span class="badge bg-warning">
+                <i class="fas fa-trophy me-1"></i>Total: {{ '{:,.2f}'.format(data.total_prize) }} &euro;
             </span>
             {% endif %}
             <form method="POST" action="/sorteios/my-keys/{{ key_id }}/delete" class="d-inline" onsubmit="return confirm('Apagar esta chave?')">
@@ -77,50 +72,49 @@
     </div>
     <div class="card-body">
         {% if data.wins %}
-        <h6 class="text-success"><i class="fas fa-trophy me-1"></i>Prémios Ganhos:</h6>
+        <div class="mb-3">
+            <h6 style="color: var(--success-light);"><i class="fas fa-trophy me-1"></i>Sorteios Premiados ({{ data.wins|length }})</h6>
+        </div>
         <div class="table-responsive">
-            <table class="table table-sm table-hover">
+            <table class="table table-sm mb-0">
                 <thead>
                     <tr>
-                        <th>Data Sorteio</th>
-                        <th>Números Sorteio</th>
-                        <th>Estrelas Sorteio</th>
-                        <th>Acertos</th>
-                        <th>Prémio</th>
+                        <th>Data</th>
+                        <th>Sorteio</th>
+                        <th class="text-center">Chave</th>
+                        <th class="text-center">Resultado</th>
+                        <th class="text-end">Pr&eacute;mio</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for win in data.wins %}
-                    <tr class="table-success">
-                        <td>{{ win.draw_date }}</td>
-                        <td>
-                            {% for n in win.draw_numbers %}
-                            <span class="euro-ball {% if n in win.key_numbers %}ball-match{% endif %}">{{ n }}</span>
-                            {% endfor %}
+                    <tr>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary);">{{ win.draw_date }}</td>
+                        <td>{% for n in win.draw_numbers %}<span class="euro-ball{% if n in win.key_numbers %} ball-match{% endif %}" style="width:30px;height:30px;font-size:0.65rem;">{{ n }}</span>{% endfor %} {% for s in win.draw_stars %}<span class="euro-star{% if s in win.key_stars %} star-match{% endif %}" style="width:30px;height:30px;font-size:0.65rem;"><i class="fas fa-star"></i>{{ s }}</span>{% endfor %}</td>
+                        <td class="text-center">{% for n in win.key_numbers %}<span class="euro-ball{% if n in win.draw_numbers %} ball-match{% endif %}" style="width:24px;height:24px;font-size:0.55rem;">{{ n }}</span>{% endfor %} {% for s in win.key_stars %}<span class="euro-star{% if s in win.draw_stars %} star-match{% endif %}" style="width:24px;height:24px;font-size:0.55rem;"><i class="fas fa-star"></i>{{ s }}</span>{% endfor %}</td>
+                        <td class="text-center">
+                            <span class="badge bg-success" style="font-size: 0.7rem;">{{ win.matched_numbers }}N + {{ win.matched_stars }}E</span>
                         </td>
-                        <td>
-                            {% for s in win.draw_stars %}
-                            <span class="euro-star {% if s in win.key_stars %}star-match{% endif %}">{{ s }}</span>
-                            {% endfor %}
+                        <td class="text-end" style="color: var(--accent-light); font-weight: 700; font-size: 0.9rem;">
+                            {{ '{:,.2f}'.format(win.prize) }} &euro;
                         </td>
-                        <td><strong>{{ win.matched_numbers }}</strong> nums + <strong>{{ win.matched_stars }}</strong> estr.</td>
-                        <td class="text-success fw-bold">{{ '{:,.2f}'.format(win.prize) }} €</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         {% else %}
-        <p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i>Ainda sem prémios. A chave será verificada automaticamente em cada novo sorteio.</p>
+        <p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i>Ainda sem pr&eacute;mios para esta chave.</p>
         {% endif %}
     </div>
 </div>
 {% endfor %}
 {% else %}
 <div class="card shadow">
-    <div class="card-body text-center py-5 text-muted">
-        <i class="fas fa-key fa-3x mb-3"></i>
-        <p>Nenhuma chave adicionada. Adicione as suas chaves acima para verificar automaticamente em todos os sorteios.</p>
+    <div class="card-body text-center py-5">
+        <i class="fas fa-key fa-3x mb-3" style="color: var(--text-muted); opacity: 0.3;"></i>
+        <h5 class="text-muted">Nenhuma chave registada</h5>
+        <p class="text-muted" style="font-size: 0.85rem;">Adiciona a tua primeira chave acima para come&ccedil;ar a acompanhar pr&eacute;mios.</p>
     </div>
 </div>
 {% endif %}

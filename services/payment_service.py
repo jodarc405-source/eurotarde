@@ -61,11 +61,14 @@ def get_user_weeks_paid(db: Session, user_id: int) -> list[dict]:
     """Get 52 weeks for a user, marking which are paid based on total payments.
 
     Each week costs €1. Payments accumulate and extend the paid period.
-    Returns a list of 52 week dicts with: week_number, date_start, date_end, paid
+    Returns a list of 52 week dicts with: week_number, date_start, date_end, paid, month
     """
     from datetime import date, timedelta
     from sqlalchemy import func
     from models.payment import Payment
+
+    MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+                   "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
     # Get total amount paid by this user
     total_paid = db.query(func.sum(Payment.amount)).filter(
@@ -87,12 +90,17 @@ def get_user_weeks_paid(db: Session, user_id: int) -> list[dict]:
         week_num = i + 1
         week_start = monday + timedelta(weeks=i)
         week_end = week_start + timedelta(days=6)
+        # Determine the month this week belongs to (by the Wednesday of the week)
+        wednesday = week_start + timedelta(days=2)
+        month_name = MONTH_NAMES[wednesday.month - 1]
         weeks.append({
             "week_number": week_num,
             "date_start": week_start.strftime("%d/%m"),
             "date_end": week_end.strftime("%d/%m"),
             "paid": week_num <= weeks_paid,
             "current": week_start <= today <= week_end,
+            "month": month_name,
+            "month_num": wednesday.month,
         })
 
     return weeks

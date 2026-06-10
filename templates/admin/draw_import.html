@@ -12,24 +12,16 @@
             <div class="card-body">
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
-                    Importa automaticamente todos os sorteios do Euromilhões desde <strong>1 de Junho 2026</strong> até à data atual.
+                    Importa automaticamente todos os sorteios do Euromilhões dos <strong>últimos 6 meses</strong> a partir do site oficial.
                     Os sorteios ocorrem todas as <strong>Terças-feiras e Sextas-feiras</strong>.
                 </div>
 
                 <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="card bg-light">
-                            <div class="card-body text-center">
-                                <h3 class="text-primary">{{ known_count }}</h3>
-                                <p class="text-muted mb-0">Sorteios disponíveis para importar</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <div class="card bg-light">
                             <div class="card-body text-center">
                                 <h3 class="text-success">{{ existing_count }}</h3>
-                                <p class="text-muted mb-0">Sorteios já na base de dados</p>
+                                <p class="text-muted mb-0">Sorteios na base de dados</p>
                             </div>
                         </div>
                     </div>
@@ -37,7 +29,7 @@
 
                 <form method="POST" action="/admin/draws/import" class="mb-3">
                     <button type="submit" class="btn btn-warning btn-lg w-100">
-                        <i class="fas fa-download me-2"></i>Importar Sorteios de Junho 2026
+                        <i class="fas fa-download me-2"></i>Importar Sorteios (últimos 6 meses)
                     </button>
                 </form>
 

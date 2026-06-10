@@ -12,16 +12,6 @@ from models.key import Key
 router = APIRouter()
 
 
-@router.get("/api/charts/prizes-per-user")
-async def prizes_per_user(db: Session = Depends(get_db)):
-    users = get_all_users(db)
-    data = []
-    for user in users:
-        keys = db.query(Key).filter(Key.user_id == user.id, Key.prize_won > 0).all()
-        total = sum(k.prize_won for k in keys)
-        data.append({"username": user.username, "total_prizes": total, "count": len(keys)})
-    return JSONResponse(content=data)
-
 
 @router.get("/api/charts/payment-history")
 async def payment_history(db: Session = Depends(get_db)):
@@ -31,9 +21,17 @@ async def payment_history(db: Session = Depends(get_db)):
 
 @router.get("/api/charts/user-stats")
 async def user_stats(db: Session = Depends(get_db)):
+    from datetime import date
+    from models.draw import Draw
     users = get_all_users(db)
     draws = get_all_draws(db)
-    total_prizes = db.query(func.sum(Key.prize_won)).scalar() or 0
+    # Total de prémios de 2026 (filtrando pelo draw_date)
+    year_start = date(2026, 1, 1)
+    year_end = date(2026, 12, 31)
+    total_prizes = db.query(func.sum(Key.prize_won)).join(Draw).filter(
+        Draw.draw_date >= year_start,
+        Draw.draw_date <= year_end,
+    ).scalar() or 0
     return JSONResponse(content={
         "total_users": len(users),
         "total_draws": len(draws),

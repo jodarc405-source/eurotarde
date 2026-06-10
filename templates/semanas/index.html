@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Semanas 2026 - Eurotarde{% endblock %}
+{% block content %}
+<h2 class="page-title"><i class="fas fa-calendar-week"></i> Semanas 2026</h2>
+
+<p class="text-muted mb-4">
+    Cada semana custa <strong style="color: var(--accent-light);">1 &euro;</strong>.
+    As semanas são contadas de 1 de janeiro a 31 de dezembro de 2026.
+</p>
+
+{% if weeks_data %}
+{% for uw in weeks_data %}
+<div class="card shadow mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-user-circle me-2" style="color: var(--primary-light);"></i>
+            {{ uw.username }}
+        </h5>
+        {% set paid_count = uw.weeks | selectattr('paid') | list | length %}
+        <span class="badge bg-success" style="font-size: 0.85rem;">
+            {{ paid_count }}/52 semanas pagas
+        </span>
+    </div>
+    <div class="card-body">
+        <!-- Month-by-month grid -->
+        {% for mg in uw.month_groups %}
+        {% if loop.index > 1 %}<hr style="border-color: var(--bg-glass-border); opacity: 0.5; margin: 1rem 0;">{% endif %}
+        <div class="mb-2">
+            <h6 style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
+                {{ mg.name }}
+            </h6>
+            <div class="d-flex flex-wrap gap-1">
+                {% for w in uw.weeks %}
+                    {% if w.month == mg.name %}
+                    <div class="week-cell {% if w.paid and w.current %}week-current-paid{% elif w.paid %}week-paid{% elif w.current %}week-current-unpaid{% else %}week-unpaid{% endif %}"
+                         title="Semana {{ w.week_number }}: {{ w.date_start }} a {{ w.date_end }} — {% if w.paid %}Pago{% else %}Por pagar{% endif %}">
+                        {{ w.week_number }}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+<!-- Legend -->
+<div class="card shadow mt-4">
+    <div class="card-body">
+        <h6 style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">Legenda</h6>
+        <div class="d-flex flex-wrap gap-4" style="font-size: 0.82rem;">
+            <span class="d-flex align-items-center gap-2">
+                <span class="week-cell week-paid" style="width:22px;height:22px;display:inline-flex; font-size:0.55rem;"></span>
+                <span style="color: var(--text-secondary);">Pago</span>
+            </span>
+            <span class="d-flex align-items-center gap-2">
+                <span class="week-cell week-unpaid" style="width:22px;height:22px;display:inline-flex; font-size:0.55rem;"></span>
+                <span style="color: var(--text-secondary);">Por pagar</span>
+            </span>
+            <span class="d-flex align-items-center gap-2">
+                <span class="week-cell week-current-paid" style="width:22px;height:22px;display:inline-flex; font-size:0.55rem;"></span>
+                <span style="color: var(--text-secondary);">Semana atual (paga)</span>
+            </span>
+            <span class="d-flex align-items-center gap-2">
+                <span class="week-cell week-current-unpaid" style="width:22px;height:22px;display:inline-flex; font-size:0.55rem;"></span>
+                <span style="color: var(--text-secondary);">Semana atual (por pagar)</span>
+            </span>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card shadow">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-calendar-times fa-3x mb-3" style="color: var(--text-muted); opacity: 0.3;"></i>
+        <h5 class="text-muted">Nenhum utilizador encontrado</h5>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

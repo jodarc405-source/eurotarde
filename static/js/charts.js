@@ -2,7 +2,6 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     loadStats();
-    loadPrizesChart();
     loadPaymentsChart();
 });
 
@@ -21,58 +20,6 @@ async function loadStats() {
     }
 }
 
-async function loadPrizesChart() {
-    try {
-        const resp = await fetch('/api/charts/prizes-per-user');
-        const data = await resp.json();
-        const ctx = document.getElementById('prizesChart');
-        if (!ctx) return;
-
-        const labels = data.map(d => d.username);
-        const values = data.map(d => d.total_prizes);
-        const counts = data.map(d => d.count);
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Prémios Ganhos (€)',
-                    data: values,
-                    backgroundColor: 'rgba(255, 215, 0, 0.7)',
-                    borderColor: 'rgba(218, 165, 32, 1)',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            afterLabel: function(ctx) {
-                                return 'Nº de prémios: ' + counts[ctx.dataIndex];
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString('pt-PT') + ' €';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    } catch (e) {
-        console.error('Error loading prizes chart:', e);
-    }
-}
 
 async function loadPaymentsChart() {
     try {

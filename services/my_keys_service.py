@@ -7,10 +7,10 @@ from models.prize import PrizeTier
 from services.key_checker import check_key_against_draw, determine_prize
 
 
-def create_my_key(db: Session, numbers: list[int], stars: list[int], label: str = "") -> Key:
+def create_my_key(db: Session, numbers: list[int], stars: list[int], label: str = "", user_id: int = 0) -> Key:
     """Create a new 'my key' — a persistent key that gets checked against all draws."""
     key = Key(
-        user_id=0,  # 0 = system/admin key
+        user_id=user_id,
         draw_id=0,  # 0 = not tied to a specific draw
         numbers=json.dumps(sorted(numbers)),
         stars=json.dumps(sorted(stars)),
@@ -22,17 +22,17 @@ def create_my_key(db: Session, numbers: list[int], stars: list[int], label: str 
     return key
 
 
-def get_my_keys(db: Session) -> list[Key]:
-    """Get all 'my keys' (user_id=0)."""
-    return db.query(Key).filter(Key.user_id == 0).order_by(Key.created_at.desc()).all()
+def get_my_keys(db: Session, user_id: int = 0) -> list[Key]:
+    """Get all 'my keys' for a given user (default 0 = system keys)."""
+    return db.query(Key).filter(Key.user_id == user_id).order_by(Key.created_at.desc()).all()
 
 
-def get_my_key_by_id(db: Session, key_id: int) -> Key | None:
-    return db.query(Key).filter(Key.id == key_id, Key.user_id == 0).first()
+def get_my_key_by_id(db: Session, key_id: int, user_id: int = 0) -> Key | None:
+    return db.query(Key).filter(Key.id == key_id, Key.user_id == user_id).first()
 
 
-def delete_my_key(db: Session, key_id: int) -> bool:
-    key = db.query(Key).filter(Key.id == key_id, Key.user_id == 0).first()
+def delete_my_key(db: Session, key_id: int, user_id: int = 0) -> bool:
+    key = db.query(Key).filter(Key.id == key_id, Key.user_id == user_id).first()
     if key:
         db.delete(key)
         db.commit()
@@ -40,9 +40,9 @@ def delete_my_key(db: Session, key_id: int) -> bool:
     return False
 
 
-def check_my_key_against_draw(db: Session, key_id: int, draw_id: int) -> dict:
+def check_my_key_against_draw(db: Session, key_id: int, draw_id: int, user_id: int = 0) -> dict:
     """Check a specific my_key against a specific draw. Returns result dict."""
-    key = db.query(Key).filter(Key.id == key_id, Key.user_id == 0).first()
+    key = db.query(Key).filter(Key.id == key_id, Key.user_id == user_id).first()
     draw = db.query(Draw).filter(Draw.id == draw_id).first()
     if not key or not draw:
         return {"error": "Key or draw not found"}
@@ -71,9 +71,9 @@ def check_my_key_against_draw(db: Session, key_id: int, draw_id: int) -> dict:
     }
 
 
-def check_all_my_keys_against_draw(db: Session, draw_id: int) -> list[dict]:
+def check_all_my_keys_against_draw(db: Session, draw_id: int, user_id: int = 0) -> list[dict]:
     """Check all my_keys against a specific draw. Returns list of results."""
-    my_keys = get_my_keys(db)
+    my_keys = get_my_keys(db, user_id=user_id)
     results = []
     for key in my_keys:
         result = check_my_key_against_draw(db, key.id, draw_id)
@@ -93,9 +93,9 @@ def check_my_key_against_all_draws(db: Session, key_id: int) -> list[dict]:
     return results
 
 
-def get_all_my_keys_results(db: Session) -> dict:
+def get_all_my_keys_results(db: Session, user_id: int = 0) -> dict:
     """Get all results for all my_keys against all draws. Returns {key_id: [results]}."""
-    my_keys = get_my_keys(db)
+    my_keys = get_my_keys(db, user_id=user_id)
     all_results = {}
     for key in my_keys:
         results = check_my_key_against_all_draws(db, key.id)

@@ -1,28 +1,120 @@
 {% extends "base.html" %}
 {% block title %}Sorteio {{ draw.draw_date }} - Eurotarde{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="fas fa-ticket me-2"></i>Detalhe do Sorteio</h2>
+<h2 class="page-title"><i class="fas fa-ticket"></i> Sorteio {{ draw.draw_date }}</h2>
 
-<div class="card shadow mb-4">
-    <div class="card-header bg-primary-euro text-white">
-        <h4 class="mb-0">Sorteio de {{ draw.draw_date.strftime('%d/%m/%Y') }}</h4>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-random me-2"></i>N&uacute;meros Sorteados</h5>
+            </div>
+            <div class="card-body text-center py-4">
+                <div class="mb-3">
+                    {% for n in draw_numbers %}
+                    <span class="euro-ball-lg{% for k in my_keys_list %}{% if n in k.numbers %} ball-match{% endif %}{% endfor %}">{{ n }}</span>
+                    {% endfor %}
+                </div>
+                <div>
+                    {% for s in draw_stars %}
+                    <span class="euro-star-lg{% for k in my_keys_list %}{% if s in k.stars %} star-match{% endif %}{% endfor %}"><i class="fas fa-star"></i> {{ s }}</span>
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <span class="badge bg-secondary" style="font-size: 0.8rem;">
+                        Pr&eacute;mio Total: <strong>{{ '{:,.2f}'.format(draw.prize_total) }} &euro;</strong>
+                    </span>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body text-center">
-        <div class="mb-3">
-            {% for n in draw_numbers %}
-            <span class="euro-ball-lg">{{ n }}</span>
-            {% endfor %}
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-key me-2"></i>Minhas Chaves</h5>
+            </div>
+            <div class="card-body text-center">
+                {% if my_keys_wins %}
+                <div class="alert alert-success">
+                    <i class="fas fa-trophy me-1"></i>{{ my_keys_wins|length }} chave(s) premiada(s)!
+                </div>
+                {% for win in my_keys_wins %}
+                <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="color: var(--text-primary); font-weight: 600; font-size: 0.9rem;">
+                            {% if win.label %}{{ win.label }}{% else %}Chave {{ loop.index }}{% endif %}
+                        </span>
+                        <span class="badge bg-success">
+                            {{ win.matched_numbers }}N + {{ win.matched_stars }}E &mdash; {{ '{:,.2f}'.format(win.prize) }}&euro;
+                        </span>
+                    </div>
+                    <div class="mb-1">
+                        <small class="text-muted">Chave:</small><br>
+                        {% for n in win.key_numbers %}
+                        <span class="euro-ball{% if n in draw_numbers %} ball-match{% endif %}">{{ n }}</span>
+                        {% endfor %}
+                        {% for s in win.key_stars %}
+                        <span class="euro-star{% if s in draw_stars %} star-match{% endif %}"><i class="fas fa-star"></i> {{ s }}</span>
+                        {% endfor %}
+                    </div>
+                    <div>
+                        <small class="text-muted">Sorteio:</small><br>
+                        {% for n in draw_numbers %}
+                        <span class="euro-ball ball-drawn">{{ n }}</span>
+                        {% endfor %}
+                        {% for s in draw_stars %}
+                        <span class="euro-star star-drawn"><i class="fas fa-star"></i> {{ s }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="py-4">
+                    <i class="fas fa-search fa-2x mb-3" style="color: var(--text-muted); opacity: 0.3;"></i>
+                    <p class="text-muted mb-0">Nenhuma chave premiada neste sorteio.</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
-        <div class="mb-3">
-            {% for s in draw_stars %}
-            <span class="euro-star-lg"><i class="fas fa-star"></i> {{ s }}</span>
-            {% endfor %}
-        </div>
-        <p class="text-muted">Jackpot: <strong>{{ '{:,.0f}'.format(draw.prize_total) }} €</strong></p>
-        {% if draw.is_manual %}
-        <span class="badge bg-warning text-dark">Inserido manualmente</span>
-        {% endif %}
     </div>
 </div>
-<a href="/sorteios" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Voltar</a>
+
+<!-- Prize tiers for this draw -->
+{% if prize_breakdown %}
+<div class="card shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Tabela de Pr&eacute;mios</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Tier</th>
+                        <th>Categoria</th>
+                        <th class="text-end">Pr&eacute;mio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tier in prize_breakdown %}
+                    <tr>
+                        <td>{{ tier.tier }}</td>
+                        <td>{{ tier.name }}</td>
+                        <td class="text-end" style="color: var(--accent-light); font-weight: 600;">
+                            {{ '{:,.2f}'.format(tier.prize) }} &euro;
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="text-center mt-3">
+    <a href="/sorteios" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Voltar aos Sorteios
+    </a>
+</div>
 {% endblock %}

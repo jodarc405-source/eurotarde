@@ -29,7 +29,22 @@
       "Bash(curl:*)",
       "Bash(Remove-Item -Force C:Projeto2eurotarde.db -ErrorAction SilentlyContinue)",
       "Bash(COOKIE=\"/tmp/euro_full.txt\" __NEW_LINE_e7ccf2955c4d5c4f__ echo \"=== 1. Login admin ===\" curl -s -c $COOKIE -o /dev/null -w \"%{http_code}\\\\n\" -X POST http://localhost:8000/auth/login -d \"username=admin&password=***REDACTED***\" __NEW_LINE_e7ccf2955c4d5c4f__ echo \"=== 2. Criar utilizador ===\" curl -s -b $COOKIE -c $COOKIE -o /dev/null -w \"Create user: %{http_code}\\\\n\" -X POST http://localhost:8000/admin/users/create -d \"username=testuser&email=test@test.com&password=teste123\" __NEW_LINE_e7ccf2955c4d5c4f__ echo \"=== 3. Ver users list ===\" curl -s -b $COOKIE http://localhost:8000/admin/users)",
-      "Bash(git commit -m \"Eurotarde v3.0 - Novas funcionalidades:*)"
+      "Bash(git commit -m \"Eurotarde v3.0 - Novas funcionalidades:*)",
+      "Bash(git:*)",
+      "Bash(copy:*)",
+      "Bash(cp \"C:/Projeto2/docs/obsidian/Projeto Eurotarde.md\" \"C:/Users/leozi/Documents/Obsidian Vault/Obsidian Vault/\")",
+      "Bash(cp \"C:/Projeto2/docs/obsidian/Arquitetura.md\" \"C:/Users/leozi/Documents/Obsidian Vault/Obsidian Vault/\")",
+      "Bash(cp \"C:/Projeto2/docs/obsidian/Rotas e Endpoints.md\" \"C:/Users/leozi/Documents/Obsidian Vault/Obsidian Vault/\")",
+      "Bash(cp \"C:/Projeto2/docs/obsidian/Modelos de Dados.md\" \"C:/Users/leozi/Documents/Obsidian Vault/Obsidian Vault/\")",
+      "Bash(cp \"C:/Projeto2/docs/obsidian/Servicos.md\" \"C:/Users/leozi/Documents/Obsidian Vault/Obsidian Vault/\")",
+      "Bash(for f:*)",
+      "Bash(do cp:*)",
+      "Bash(done)",
+      "WebFetch(domain:euromillions-api.com)",
+      "WebSearch",
+      "WebFetch(domain:www.national-lottery.co.uk)",
+      "WebFetch(domain:www.euro-millions.com)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from services.auth_service import get_all_users, update_user_password, get_user_by_id, create_user, hash_password
 from services.draw_service import create_draw, get_draw_by_date, get_all_draws, delete_draw
-from services.euromillions_api import fetch_draws_since, get_known_draws_from_june_2026
+from services.euromillions_api import fetch_all_draws_last_n_months, fetch_latest_draw
 from models.prize import PrizeTier
 from models.user import User
 from models.draw import Draw
@@ -149,24 +149,26 @@ async def manual_draw_submit(
 async def import_draws_page(request: Request, db: Session = Depends(get_db)):
     from models.draw import Draw
     existing_count = db.query(Draw).count()
-    known_count = len(get_known_draws_from_june_2026())
     return request.app.state.templates.TemplateResponse("admin/draw_import.html", {
         "request": request,
-        "known_count": known_count,
         "existing_count": existing_count,
     })
 
 
 @router.post("/admin/draws/import")
 async def import_draws_submit(request: Request, db: Session = Depends(get_db)):
-    draws = get_known_draws_from_june_2026()
+    from datetime import date as date_t
+    draws = fetch_all_draws_last_n_months(months=6)
     added = 0
     for draw_data in draws:
-        existing = get_draw_by_date(db, draw_data["date"])
+        if not draw_data or not draw_data.get("numbers"):
+            continue
+        draw_date = date_t.fromisoformat(draw_data["date"])
+        existing = get_draw_by_date(db, draw_date)
         if not existing:
             create_draw(
                 db,
-                draw_date=draw_data["date"],
+                draw_date=draw_date,
                 numbers=draw_data["numbers"],
                 stars=draw_data["stars"],
                 prize_total=draw_data.get("prize_total", 0.0),

@@ -8,9 +8,16 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
+connect_args = {}
+if "sqlite" in settings.DATABASE_URL:
+    connect_args["check_same_thread"] = False
+elif "postgresql" in settings.DATABASE_URL:
+    connect_args["sslmode"] = "require"
+
 engine = create_engine(
     settings.DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {}
+    connect_args=connect_args,
+    pool_pre_ping=True,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -97,17 +104,18 @@ def init_db():
         if db.query(PrizeTier).count() == 0:
             default_tiers = [
                 PrizeTier(tier=1, name="5+2", matched_numbers=5, matched_stars=2, prize_amount=0.0),
-                PrizeTier(tier=2, name="5+1", matched_numbers=5, matched_stars=1, prize_amount=125000.0),
-                PrizeTier(tier=3, name="5+0", matched_numbers=5, matched_stars=0, prize_amount=25000.0),
-                PrizeTier(tier=4, name="4+2", matched_numbers=4, matched_stars=2, prize_amount=1500.0),
-                PrizeTier(tier=5, name="4+1", matched_numbers=4, matched_stars=1, prize_amount=100.0),
-                PrizeTier(tier=6, name="3+2", matched_numbers=3, matched_stars=2, prize_amount=50.0),
-                PrizeTier(tier=7, name="4+0", matched_numbers=4, matched_stars=0, prize_amount=40.0),
-                PrizeTier(tier=8, name="2+2", matched_numbers=2, matched_stars=2, prize_amount=12.0),
-                PrizeTier(tier=9, name="3+1", matched_numbers=3, matched_stars=1, prize_amount=10.0),
-                PrizeTier(tier=10, name="3+0", matched_numbers=3, matched_stars=0, prize_amount=8.0),
-                PrizeTier(tier=11, name="1+2", matched_numbers=1, matched_stars=2, prize_amount=6.0),
-                PrizeTier(tier=12, name="2+1", matched_numbers=2, matched_stars=1, prize_amount=5.0),
+                PrizeTier(tier=2, name="5+1", matched_numbers=5, matched_stars=1, prize_amount=365514.68),
+                PrizeTier(tier=3, name="5+0", matched_numbers=5, matched_stars=0, prize_amount=21356.70),
+                PrizeTier(tier=4, name="4+2", matched_numbers=4, matched_stars=2, prize_amount=2157.43),
+                PrizeTier(tier=5, name="4+1", matched_numbers=4, matched_stars=1, prize_amount=134.16),
+                PrizeTier(tier=6, name="3+2", matched_numbers=3, matched_stars=2, prize_amount=71.27),
+                PrizeTier(tier=7, name="4+0", matched_numbers=4, matched_stars=0, prize_amount=44.13),
+                PrizeTier(tier=8, name="2+2", matched_numbers=2, matched_stars=2, prize_amount=16.27),
+                PrizeTier(tier=9, name="3+1", matched_numbers=3, matched_stars=1, prize_amount=12.06),
+                PrizeTier(tier=10, name="3+0", matched_numbers=3, matched_stars=0, prize_amount=9.16),
+                PrizeTier(tier=11, name="1+2", matched_numbers=1, matched_stars=2, prize_amount=7.80),
+                PrizeTier(tier=12, name="2+1", matched_numbers=2, matched_stars=1, prize_amount=5.67),
+                PrizeTier(tier=13, name="2+0", matched_numbers=2, matched_stars=0, prize_amount=3.72),
             ]
             db.add_all(default_tiers)
 

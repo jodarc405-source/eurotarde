@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eurotarde — A Tua Plataforma Euromilhões</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/css/fontawesome.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <style>
+        /* Landing page exclusive styles */
+        .landing-body {
+            background: #0a0e1a;
+            overflow-x: hidden;
+        }
+
+        .landing-body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse 70% 50% at 20% 20%, rgba(99,102,241,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 70% at 80% 80%, rgba(245,158,11,0.1) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 50% 50%, rgba(6,182,212,0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+
+        .hero-logo {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            animation: hero-float 4s ease-in-out infinite;
+        }
+
+        .hero-logo .star-icon {
+            color: var(--accent);
+            filter: drop-shadow(0 0 30px rgba(245,158,11,0.6));
+            animation: star-rotate 6s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes hero-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+
+        @keyframes star-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero h1 .gold {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            line-height: 1.7;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 4rem;
+        }
+
+        .hero-buttons .btn {
+            padding: 0.85rem 2rem;
+            font-size: 1rem;
+            border-radius: 12px;
+        }
+
+        /* Floating balls decoration */
+        .floating-balls {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .float-ball {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #1e293b;
+            animation: float-around 8s ease-in-out infinite;
+        }
+
+        .float-ball.gold {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            box-shadow: 0 0 20px rgba(245,158,11,0.4);
+        }
+
+        .float-ball.silver {
+            background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+            box-shadow: 0 0 15px rgba(148,163,184,0.3);
+        }
+
+        .float-ball.indigo {
+            background: linear-gradient(135deg, #818cf8, #6366f1);
+            box-shadow: 0 0 15px rgba(99,102,241,0.3);
+            color: #fff;
+        }
+
+        @keyframes float-around {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(15px, -20px) rotate(90deg); }
+            50% { transform: translate(-10px, -35px) rotate(180deg); }
+            75% { transform: translate(20px, -15px) rotate(270deg); }
+        }
+
+        /* Features section */
+        .features {
+            position: relative;
+            z-index: 1;
+            padding: 4rem 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 3rem;
+            color: var(--text-primary);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(99,102,241,0.3);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 20px rgba(99,102,241,0.15);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Euro ball showcase */
+        .ball-showcase {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin: 2rem 0 3rem;
+            flex-wrap: wrap;
+        }
+
+        .showcase-ball {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: #1e293b;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706);
+            box-shadow: 0 0 20px rgba(245,158,11,0.5), 0 0 60px rgba(245,158,11,0.2);
+            animation: ball-bounce 2s ease-in-out infinite;
+        }
+
+        .showcase-ball:nth-child(2) { animation-delay: 0.15s; }
+        .showcase-ball:nth-child(3) { animation-delay: 0.3s; }
+        .showcase-ball:nth-child(4) { animation-delay: 0.45s; }
+        .showcase-ball:nth-child(5) { animation-delay: 0.6s; }
+
+        .showcase-star {
+            width: 44px; height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #fbbf24;
+            text-shadow: 0 0 20px rgba(245,158,11,0.8);
+            animation: star-twinkle-landing 2s ease-in-out infinite;
+        }
+
+        .showcase-star:nth-child(7) { animation-delay: 0.3s; }
+        .showcase-star:nth-child(8) { animation-delay: 0.6s; }
+
+        @keyframes ball-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes star-twinkle-landing {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.15); }
+        }
+
+        /* CTA section */
+        .cta-section {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 3rem 2rem 5rem;
+        }
+
+        .cta-section p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; }
+            .hero-logo { font-size: 3rem; }
+            .hero-subtitle { font-size: 0.95rem; }
+            .showcase-ball { width: 42px; height: 42px; font-size: 0.75rem; }
+            .showcase-star { width: 36px; height: 36px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body class="landing-body">
+    <!-- Floating decorative balls -->
+    <div class="floating-balls">
+        <div class="float-ball gold" style="width:40px;height:40px;top:15%;left:8%;animation-delay:0s;">7</div>
+        <div class="float-ball silver" style="width:36px;height:36px;top:25%;right:12%;animation-delay:1s;">23</div>
+        <div class="float-ball indigo" style="width:32px;height:32px;top:60%;left:5%;animation-delay:2s;">41</div>
+        <div class="float-ball gold" style="width:28px;height:28px;top:70%;right:8%;animation-delay:0.5s;">12</div>
+        <div class="float-ball silver" style="width:34px;height:34px;top:40%;left:90%;animation-delay:1.5s;">35</div>
+        <div class="float-ball gold" style="width:24px;height:24px;top:85%;left:15%;animation-delay:3s;">★</div>
+        <div class="float-ball silver" style="width:26px;height:26px;top:10%;left:50%;animation-delay:2.5s;">★</div>
+        <div class="float-ball indigo" style="width:30px;height:30px;top:50%;right:3%;animation-delay:1.8s;">19</div>
+        <div class="float-ball gold" style="width:22px;height:22px;top:35%;left:3%;animation-delay:0.8s;">3</div>
+        <div class="float-ball silver" style="width:20px;height:20px;top:80%;right:20%;animation-delay:2.2s;">48</div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="hero-content">
+            <div class="hero-logo">
+                <span class="star-icon"><i class="fas fa-star"></i></span>
+            </div>
+
+            <h1>Euro<span class="gold">tarde</span></h1>
+
+            <p class="hero-subtitle">
+                A tua plataforma de acompanhamento do <strong style="color: var(--accent-light);">Euromilhões</strong>.
+                Gere as tuas chaves, acompanha os sorteios e descobre os teus prémios — tudo num só lugar.
+            </p>
+
+            <!-- Animated ball showcase -->
+            <div class="ball-showcase">
+                <div class="showcase-ball">7</div>
+                <div class="showcase-ball">19</div>
+                <div class="showcase-ball">23</div>
+                <div class="showcase-ball">34</div>
+                <div class="showcase-ball">45</div>
+                <div class="showcase-star"><i class="fas fa-star"></i></div>
+                <div class="showcase-star"><i class="fas fa-star"></i></div>
+            </div>
+
+            <div class="hero-buttons">
+                <a href="/auth/login" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                </a>
+                <a href="/auth/register" class="btn btn-outline-light">
+                    <i class="fas fa-user-plus me-2"></i>Criar Conta
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <div class="features">
+        <h2>O que podes fazer</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <span class="feature-icon" style="color: var(--accent);"><i class="fas fa-ticket"></i></span>
+                <h3>Sorteios em Tempo Real</h3>
+                <p>Acompanha todos os resultados do Euromilhões. Os números sorteados são importados automaticamente.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon" style="color: var(--primary-light);"><i class="fas fa-key"></i></span>
+                <h3>As Tuas Chaves</h3>
+                <p>Gere e guarda as tuas chaves favoritas. O sistema verifica automaticamente se ganhaste prémios.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon" style="color: var(--success-light);"><i class="fas fa-trophy"></i></span>
+                <h3>Prémios Automáticos</h3>
+                <p>Descobre instantaneamente quanto ganhaste em cada sorteio. Sem cálculos manuais.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon" style="color: var(--info);"><i class="fas fa-calendar-week"></i></span>
+                <h3>Gestão de Pagamentos</h3>
+                <p>Controla as semanas pagas por cada membro do grupo. Transparência total.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-section">
+        <p>Pronto para começar?</p>
+        <a href="/auth/register" class="btn btn-primary" style="padding: 0.85rem 2.5rem; font-size: 1rem; border-radius: 12px;">
+            <i class="fas fa-rocket me-2"></i>Criar Conta Grátis
+        </a>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center" style="padding: 2rem; position: relative; z-index: 1;">
+        <p class="mb-0" style="color: var(--text-muted); font-size: 0.82rem;">
+            Eurotarde &copy; 2026 — Feito por José Miguel
+        </p>
+    </footer>
+
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

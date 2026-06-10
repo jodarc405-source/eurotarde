@@ -1,37 +1,70 @@
 {% extends "base.html" %}
 {% block title %}Registar - Eurotarde{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-header bg-primary-euro text-white text-center">
-                <h3><i class="fas fa-user-plus me-2"></i>Registar</h3>
-            </div>
+<div class="row justify-content-center mt-4">
+    <div class="col-md-5 col-sm-8">
+        <div class="card shadow-lg" style="border-color: rgba(99,102,241,0.2) !important;">
             <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <div class="mb-3" style="font-size: 2.5rem;">
+                        <i class="fas fa-user-plus" style="color: var(--primary-light); filter: drop-shadow(0 0 12px rgba(99,102,241,0.4));"></i>
+                    </div>
+                    <h4 style="font-weight: 800; letter-spacing: -0.02em;">Criar Conta</h4>
+                    <p class="text-muted" style="font-size: 0.85rem;">Regista-te no Eurotarde</p>
+                </div>
+
                 {% if error %}
-                <div class="alert alert-danger">{{ error }}</div>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
                 {% endif %}
+
                 <form method="POST" action="/auth/register">
                     <div class="mb-3">
-                        <label for="username" class="form-label">Utilizador</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                        <label class="form-label">Utilizador</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: var(--bg-glass); border-color: var(--bg-glass-border); color: var(--text-muted);">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <input type="text" class="form-control" id="username" name="username" required autofocus>
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <label class="form-label">Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: var(--bg-glass); border-color: var(--bg-glass-border); color: var(--text-muted);">
+                                <i class="fas fa-envelope"></i>
+                            </span>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">Palavra-passe</label>
-                        <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                        <label class="form-label">Palavra-passe</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: var(--bg-glass); border-color: var(--bg-glass-border); color: var(--text-muted);">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="confirm_password" class="form-label">Confirmar Palavra-passe</label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    <div class="mb-4">
+                        <label class="form-label">Confirmar Palavra-passe</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: var(--bg-glass); border-color: var(--bg-glass-border); color: var(--text-muted);">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary-euro w-100">Registar</button>
+                    <button type="submit" class="btn btn-primary w-100 mb-3" style="padding: 0.7rem;">
+                        <i class="fas fa-user-plus me-2"></i>Registar
+                    </button>
                 </form>
-                <hr>
-                <p class="text-center mb-0">Já tem conta? <a href="/auth/login">Entre aqui</a></p>
+                <div class="text-center">
+                    <span class="text-muted" style="font-size: 0.85rem;">Já tens conta? </span>
+                    <a href="/auth/login" style="font-weight: 600;">Entrar</a>
+                </div>
             </div>
         </div>
     </div>

@@ -15,6 +15,7 @@ from routes.draws import router as draws_router
 from routes.payments import router as payments_router
 from routes.admin import router as admin_router
 from routes.api import router as api_router
+from routes.semanas import router as semanas_router
 
 # Logging
 logging.basicConfig(
@@ -37,6 +38,7 @@ app.add_middleware(
     secret_key=settings.***REDACTED***,
     max_age=settings.SESSION_MAX_AGE,
     same_site="lax",
+    https_only=False,
 )
 
 # Static files
@@ -44,6 +46,26 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="templates")
+
+from jinja2 import pass_context
+
+@pass_context
+def get_flashed_messages(context, with_categories=False):
+    request = context["request"]
+    messages = request.session.get("flashed", [])
+    request.session["flashed"] = []
+    if with_categories:
+        return [(m.get("category", "info"), m.get("message", "")) if isinstance(m, dict) else ("info", m) for m in messages]
+    return [m.get("message", m) if isinstance(m, dict) else m for m in messages]
+
+@pass_context
+def flash(context, message, category="info"):
+    if "flashed" not in context["request"].session:
+        context["request"].session["flashed"] = []
+    context["request"].session["flashed"].append({"message": message, "category": category})
+
+templates.env.globals["get_flashed_messages"] = get_flashed_messages
+templates.env.globals["flash"] = flash
 templates.env.filters["fromjson"] = lambda v: json.loads(v) if isinstance(v, str) else v
 app.state.templates = templates
 
@@ -55,6 +77,18 @@ app.include_router(draws_router)
 app.include_router(payments_router)
 app.include_router(admin_router)
 app.include_router(api_router)
+app.include_router(semanas_router)
+
+
+# Middleware: no-cache for HTML pages
+@app.middleware("http")
+async def no_cache_html(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path in ("/", "/sorteios", "/pagamentos", "/admin/prizes"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 
 @app.on_event("startup")

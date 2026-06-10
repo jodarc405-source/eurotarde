@@ -18,7 +18,8 @@ router = APIRouter()
 
 @router.get("/sorteios/my-keys", response_class=HTMLResponse)
 async def my_keys_page(request: Request, db: Session = Depends(get_db)):
-    all_results = get_all_my_keys_results(db)
+    user_id = request.session.get('user_id', 0)
+    all_results = get_all_my_keys_results(db, user_id=user_id)
     return request.app.state.templates.TemplateResponse("draws/my_keys.html", {
         "request": request,
         "all_results": all_results,
@@ -35,13 +36,15 @@ async def my_keys_create(
 ):
     numbers = sorted([n1, n2, n3, n4, n5])
     stars = sorted([s1, s2])
-    create_my_key(db, numbers, stars, label)
+    user_id = request.session.get('user_id', 0)
+    create_my_key(db, numbers, stars, label, user_id=user_id)
     return RedirectResponse(url="/sorteios/my-keys", status_code=302)
 
 
 @router.post("/sorteios/my-keys/{key_id}/delete")
 async def my_keys_delete(key_id: int, request: Request, db: Session = Depends(get_db)):
-    delete_my_key(db, key_id)
+    user_id = request.session.get('user_id', 0)
+    delete_my_key(db, key_id, user_id=user_id)
     return RedirectResponse(url="/sorteios/my-keys", status_code=302)
 
 
@@ -62,9 +65,14 @@ async def list_draws(
 
     # For each draw, check if any of "my keys" won a prize
     draw_results = {}
-    if request.session.get('is_admin'):
+    my_keys_list = []  # list of {numbers: [...], stars: [...]}
+    user_id = request.session.get('user_id')
+    if user_id:
+        # Get user's keys for highlighting
+        keys = get_my_keys(db, user_id=user_id)
+        my_keys_list = [{"numbers": json.loads(k.numbers), "stars": json.loads(k.stars)} for k in keys]
         for draw in draws:
-            results = check_all_my_keys_against_draw(db, draw.id)
+            results = check_all_my_keys_against_draw(db, draw.id, user_id=user_id)
             wins = [r for r in results if r["prize"] > 0]
             if wins:
                 draw_results[draw.id] = wins
@@ -78,6 +86,7 @@ async def list_draws(
         "selected_month": month,
         "selected_year": year,
         "draw_results": draw_results,
+        "my_keys_list": my_keys_list,
         "imported": imported,
     })
 
@@ -92,9 +101,21 @@ async def draw_detail(draw_id: int, request: Request, db: Session = Depends(get_
 
     # Check my keys for this draw
     my_keys_wins = []
-    if request.session.get('is_admin'):
-        my_keys_wins = check_all_my_keys_against_draw(db, draw_id)
+    user_id = request.session.get('user_id')
+    if user_id:
+        my_keys_wins = check_all_my_keys_against_draw(db, draw_id, user_id=user_id)
         my_keys_wins = [w for w in my_keys_wins if w["prize"] > 0]
+
+    # Get user's keys for highlighting
+    my_keys_list = []
+    user_id = request.session.get('user_id')
+    if user_id:
+        keys = get_my_keys(db, user_id=user_id)
+        my_keys_list = [{"numbers": json.loads(k.numbers), "stars": json.loads(k.stars)} for k in keys]
+
+    # Prize tiers for breakdown
+    prize_tiers = db.query(PrizeTier).filter(PrizeTier.is_active == True).order_by(PrizeTier.tier).all()
+    prize_breakdown = [{"tier": t.tier, "name": t.name, "prize": float(t.prize_amount)} for t in prize_tiers]
 
     return request.app.state.templates.TemplateResponse("draws/detail.html", {
         "request": request,
@@ -102,4 +123,6 @@ async def draw_detail(draw_id: int, request: Request, db: Session = Depends(get_
         "draw_numbers": draw_numbers,
         "draw_stars": draw_stars,
         "my_keys_wins": my_keys_wins,
+        "my_keys_list": my_keys_list,
+        "prize_breakdown": prize_breakdown,
     })

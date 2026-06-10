@@ -3,7 +3,7 @@ from datetime import date
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from database import SessionLocal
-from services.euromillions_api import fetch_latest_draw, fetch_draws_since
+from services.euromillions_api import fetch_latest_draw, fetch_all_draws_last_n_months
 from services.draw_service import get_draw_by_date, create_draw
 from services.my_keys_service import check_all_my_keys_against_draw
 from models.draw import Draw
@@ -12,33 +12,35 @@ logger = logging.getLogger(__name__)
 scheduler = BackgroundScheduler()
 
 
-def import_draws_from_june_2026():
-    """Import all draws from 2026-01-01 onwards. Runs on startup."""
-    logger.info("Importing draws from 2026...")
+def import_recent_draws():
+    """Import draws from the last 6 months. Runs on startup."""
+    logger.info("Importing recent Euromillions draws...")
     try:
-        # Use synchronous fallback data directly to avoid event loop conflicts
-        from services.euromillions_api import get_known_draws_from_june_2026
-        draws = get_known_draws_from_june_2026()
+        draws = fetch_all_draws_last_n_months(months=6)
+        if not draws:
+            logger.warning("No draws returned from import.")
+            return
 
         db = SessionLocal()
         added = 0
         try:
             for draw_data in draws:
-                if draw_data and draw_data.get("numbers"):
-                    existing = get_draw_by_date(db, draw_data["date"])
-                    if not existing:
-                        new_draw = create_draw(
-                            db,
-                            draw_date=draw_data["date"],
-                            numbers=draw_data["numbers"],
-                            stars=draw_data["stars"],
-                            prize_total=draw_data.get("prize_total", 0.0),
-                            is_manual=False,
-                        )
-                        added += 1
-                        # Auto-check my keys against the new draw
-                        check_all_my_keys_against_draw(db, new_draw.id)
-            logger.info(f"Import complete: {added} new draws added from 2026.")
+                if not draw_data or not draw_data.get("numbers"):
+                    continue
+                draw_date = date.fromisoformat(draw_data["date"])
+                existing = get_draw_by_date(db, draw_date)
+                if not existing:
+                    new_draw = create_draw(
+                        db,
+                        draw_date=draw_date,
+                        numbers=draw_data["numbers"],
+                        stars=draw_data["stars"],
+                        prize_total=draw_data.get("prize_total", 0.0),
+                        is_manual=False,
+                    )
+                    added += 1
+                    check_all_my_keys_against_draw(db, new_draw.id)
+            logger.info(f"Import complete: {added} new draws added.")
         finally:
             db.close()
     except Exception as e:
@@ -49,41 +51,32 @@ def update_draws():
     """Job to update Euromillions draws. Called by scheduler every Tue & Fri at 21:00."""
     logger.info("Running scheduled draw update...")
     try:
-        # Try async API fetch in a fresh event loop
-        import asyncio
-        draw_data = None
-        try:
-            loop = asyncio.new_event_loop()
-            draw_data = loop.run_until_complete(fetch_latest_draw())
-            loop.close()
-        except Exception as e:
-            logger.warning(f"Async API fetch failed: {e}")
-
+        draw_data = fetch_latest_draw()
         if not draw_data or not draw_data.get("numbers"):
-            logger.warning("Could not fetch latest draw data from API.")
+            logger.warning("Could not fetch latest draw data.")
             return
 
         db = SessionLocal()
         try:
-            existing = get_draw_by_date(db, draw_data["date"])
+            draw_date = date.fromisoformat(draw_data["date"])
+            existing = get_draw_by_date(db, draw_date)
             if not existing:
                 new_draw = create_draw(
                     db,
-                    draw_date=draw_data["date"],
+                    draw_date=draw_date,
                     numbers=draw_data["numbers"],
                     stars=draw_data["stars"],
                     prize_total=draw_data.get("prize_total", 0.0),
                     is_manual=False,
                 )
-                logger.info(f"New draw added for {draw_data['date']}")
+                logger.info(f"New draw added for {draw_date}")
 
-                # Auto-check my keys against the new draw
                 wins = check_all_my_keys_against_draw(db, new_draw.id)
                 winning = [w for w in wins if w["prize"] > 0]
                 if winning:
                     logger.info(f"MY KEYS WON! {len(winning)} key(s) matched!")
             else:
-                logger.info(f"Draw for {draw_data['date']} already exists, skipping.")
+                logger.info(f"Draw for {draw_date} already exists, skipping.")
         finally:
             db.close()
     except Exception as e:
@@ -92,8 +85,7 @@ def update_draws():
 
 def start_scheduler():
     """Start the APScheduler with all jobs."""
-    # Import draws from June 2026 on startup (idempotent - won't duplicate)
-    import_draws_from_june_2026()
+    import_recent_draws()
 
     # Euromillions draws happen Tuesday & Friday ~20:00 CET
     # We check at 21:00 to ensure results are available
