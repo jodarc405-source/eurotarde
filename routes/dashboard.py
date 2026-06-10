@@ -23,7 +23,8 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     draws = get_all_draws(db)
 
     # My keys prize stats
-    my_keys_results = get_all_my_keys_results(db)
+    user_id = request.session.get('user_id', 0)
+    my_keys_results = get_all_my_keys_results(db, user_id=user_id)
     my_keys_count = len(my_keys_results)
     my_keys_total_wins = sum(1 for d in my_keys_results.values() if d["wins"])
     my_keys_total_prize = sum(d["total_prize"] for d in my_keys_results.values())
@@ -34,7 +35,6 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     draws_2026 = [d for d in draws if year_start <= d.draw_date <= year_end]
     total_prizes_2026 = 0.0
     for d in draws_2026:
-        user_id = request.session.get('user_id', 0)
         results = check_all_my_keys_against_draw(db, d.id, user_id=user_id)
         total_prizes_2026 += sum(r["prize"] for r in results)
 
