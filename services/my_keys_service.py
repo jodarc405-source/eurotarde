@@ -76,7 +76,7 @@ def check_all_my_keys_against_draw(db: Session, draw_id: int, user_id: int = 0) 
     my_keys = get_my_keys(db, user_id=user_id)
     results = []
     for key in my_keys:
-        result = check_my_key_against_draw(db, key.id, draw_id)
+        result = check_my_key_against_draw(db, key.id, draw_id, user_id=user_id)
         if "error" not in result:
             results.append(result)
     return results

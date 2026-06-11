@@ -75,12 +75,13 @@ async def list_draws(
         print(f"[DEBUG] Found {len(keys)} keys for user_id={user_id}")
         for k in keys:
             print(f"[DEBUG]   Key {k.id}: numbers={k.numbers}, stars={k.stars}")
-        for draw in draws:
+        for draw in draws[:3]:  # only first 3 for debug
             results = check_all_my_keys_against_draw(db, draw.id, user_id=user_id)
             wins = [r for r in results if r["prize"] > 0]
             print(f"[DEBUG] Draw {draw.id} ({draw.draw_date}): {len(results)} results, {len(wins)} wins")
+            print(f"[DEBUG]   draw.numbers={draw.numbers}, draw.stars={draw.stars}")
             for r in results:
-                print(f"[DEBUG]   -> matched={r['matched_numbers']}+{r['matched_stars']}, prize={r['prize']}")
+                print(f"[DEBUG]   -> key={r['key_numbers']}+{r['key_stars']} matched={r['matched_numbers']}+{r['matched_stars']}, prize={r['prize']}")
             if wins:
                 draw_results[draw.id] = wins
 
