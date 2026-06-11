@@ -82,12 +82,12 @@ def check_all_my_keys_against_draw(db: Session, draw_id: int, user_id: int = 0) 
     return results
 
 
-def check_my_key_against_all_draws(db: Session, key_id: int) -> list[dict]:
+def check_my_key_against_all_draws(db: Session, key_id: int, user_id: int = 0) -> list[dict]:
     """Check a specific my_key against ALL draws. Returns list of results with prizes."""
     draws = db.query(Draw).order_by(Draw.draw_date.desc()).all()
     results = []
     for draw in draws:
-        result = check_my_key_against_draw(db, key_id, draw.id)
+        result = check_my_key_against_draw(db, key_id, draw.id, user_id=user_id)
         if "error" not in result and result["prize"] > 0:
             results.append(result)
     return results
@@ -98,7 +98,7 @@ def get_all_my_keys_results(db: Session, user_id: int = 0) -> dict:
     my_keys = get_my_keys(db, user_id=user_id)
     all_results = {}
     for key in my_keys:
-        results = check_my_key_against_all_draws(db, key.id)
+        results = check_my_key_against_all_draws(db, key.id, user_id=user_id)
         all_results[key.id] = {
             "key": key,
             "wins": results,
