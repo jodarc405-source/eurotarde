@@ -116,6 +116,8 @@ def init_db():
                 PrizeTier(tier=11, name="1+2", matched_numbers=1, matched_stars=2, prize_amount=7.80),
                 PrizeTier(tier=12, name="2+1", matched_numbers=2, matched_stars=1, prize_amount=5.67),
                 PrizeTier(tier=13, name="2+0", matched_numbers=2, matched_stars=0, prize_amount=3.72),
+                PrizeTier(tier=14, name="1+1", matched_numbers=1, matched_stars=1, prize_amount=4.13),
+                PrizeTier(tier=15, name="0+2", matched_numbers=0, matched_stars=2, prize_amount=5.00),
             ]
             db.add_all(default_tiers)
 
