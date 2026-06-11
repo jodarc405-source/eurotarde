@@ -4,6 +4,11 @@ from sqlalchemy.orm import Session
 from database import get_db
 from services.draw_service import get_all_draws
 from services.my_keys_service import get_all_my_keys_results, check_all_my_keys_against_draw
+from services.analytics import (
+    get_total_views, get_today_views, get_views_this_week,
+    get_unique_visitors_today, get_unique_visitors_total, get_top_pages,
+    get_views_last_7_days,
+)
 from models.user import User
 from models.draw import Draw
 from datetime import date
@@ -38,6 +43,20 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
         results = check_all_my_keys_against_draw(db, d.id, user_id=user_id)
         total_prizes_2026 += sum(r["prize"] for r in results)
 
+    # Analytics — only for admin
+    analytics = None
+    current_user = db.query(User).filter(User.id == user_id).first()
+    if current_user and current_user.is_admin:
+        analytics = {
+            "total_views": get_total_views(db),
+            "today_views": get_today_views(db),
+            "week_views": get_views_this_week(db),
+            "unique_visitors_today": get_unique_visitors_today(db),
+            "unique_visitors_total": get_unique_visitors_total(db),
+            "top_pages": get_top_pages(db, limit=10),
+            "views_last_7_days": get_views_last_7_days(db),
+        }
+
     return request.app.state.templates.TemplateResponse("dashboard/index.html", {
         "request": request,
         "users": users,
@@ -47,4 +66,5 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
         "my_keys_total_prize": my_keys_total_prize,
         "total_prizes_2026": float(total_prizes_2026),
         "all_results": my_keys_results,
+        "analytics": analytics,
     })

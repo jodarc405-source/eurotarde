@@ -91,6 +91,44 @@ async def no_cache_html(request: Request, call_next):
     return response
 
 
+# Middleware: track page views
+@app.middleware("http")
+async def track_page_views(request: Request, call_next):
+    response = await call_next(request)
+
+    # Only count HTML page requests (ignore static files, API, favicon)
+    path = request.url.path
+    if path.startswith("/static") or path.startswith("/api") or path == "/favicon.ico":
+        return response
+    if not request.headers.get("accept", "").startswith("text/html") and "text/html" not in request.headers.get("accept", ""):
+        # Still count even without accept header (some requests)
+        pass
+
+    try:
+        from database import SessionLocal
+        from models.page_view import PageView
+        db = SessionLocal()
+        try:
+            user_id = request.session.get("user_id")
+            user_agent = request.headers.get("user-agent", "")[:500]
+            page_view = PageView(
+                path=path,
+                method=request.method,
+                status_code=response.status_code,
+                ip_address=request.client.host if request.client else None,
+                user_agent=user_agent,
+                user_id=user_id,
+            )
+            db.add(page_view)
+            db.commit()
+        finally:
+            db.close()
+    except Exception:
+        pass  # Never break the request for analytics
+
+    return response
+
+
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting Eurotarde application...")

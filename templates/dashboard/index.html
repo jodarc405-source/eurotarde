@@ -125,6 +125,69 @@
 </div>
 {% endif %}
 
+<!-- Analytics — Admin only -->
+{% if analytics %}
+<div class="card shadow mb-4" style="border-color: rgba(139,92,246,0.3) !important;">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background: rgba(139,92,246,0.1) !important;">
+        <h5 class="mb-0" style="color: #a78bfa;">
+            <i class="fas fa-chart-bar me-2"></i>Visualizações do Site
+        </h5>
+        <span class="badge bg-secondary" style="font-size: 0.7rem;">Admin</span>
+    </div>
+    <div class="card-body">
+        <!-- Stats row -->
+        <div class="row mb-3">
+            <div class="col-md-3 col-sm-6 text-center mb-3">
+                <div class="p-3 rounded" style="background: var(--bg-glass);">
+                    <h4 style="color: #a78bfa; font-weight: 800;">{{ analytics.total_views }}</h4>
+                    <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Total Views</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 text-center mb-3">
+                <div class="p-3 rounded" style="background: var(--bg-glass);">
+                    <h4 style="color: var(--success-light); font-weight: 800;">{{ analytics.today_views }}</h4>
+                    <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Hoje</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 text-center mb-3">
+                <div class="p-3 rounded" style="background: var(--bg-glass);">
+                    <h4 style="color: var(--info); font-weight: 800;">{{ analytics.week_views }}</h4>
+                    <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">7 Dias</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 text-center mb-3">
+                <div class="p-3 rounded" style="background: var(--bg-glass);">
+                    <h4 style="color: var(--accent-light); font-weight: 800;">{{ analytics.unique_visitors_total }}</h4>
+                    <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Visitantes Únicos</small>
+                </div>
+            </div>
+        </div>
+        <!-- Top pages -->
+        {% if analytics.top_pages %}
+        <h6 class="text-muted mb-2" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;"><i class="fas fa-fire me-1"></i>Páginas Mais Visitadas</h6>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Página</th>
+                        <th class="text-end">Visualizações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for page in analytics.top_pages[:5] %}
+                    <tr>
+                        <td style="color: var(--text-primary); font-family: monospace; font-size: 0.85rem;">{{ page.path }}</td>
+                        <td class="text-end" style="color: #a78bfa; font-weight: 700;">{{ page.views }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block scripts %}
