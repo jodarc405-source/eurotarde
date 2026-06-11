@@ -100,26 +100,28 @@ def init_db():
             )
             db.add(admin)
 
-        # Seed default prize tiers if not exist
-        if db.query(PrizeTier).count() == 0:
-            default_tiers = [
-                PrizeTier(tier=1, name="5+2", matched_numbers=5, matched_stars=2, prize_amount=0.0),
-                PrizeTier(tier=2, name="5+1", matched_numbers=5, matched_stars=1, prize_amount=365514.68),
-                PrizeTier(tier=3, name="5+0", matched_numbers=5, matched_stars=0, prize_amount=21356.70),
-                PrizeTier(tier=4, name="4+2", matched_numbers=4, matched_stars=2, prize_amount=2157.43),
-                PrizeTier(tier=5, name="4+1", matched_numbers=4, matched_stars=1, prize_amount=134.16),
-                PrizeTier(tier=6, name="3+2", matched_numbers=3, matched_stars=2, prize_amount=71.27),
-                PrizeTier(tier=7, name="4+0", matched_numbers=4, matched_stars=0, prize_amount=44.13),
-                PrizeTier(tier=8, name="2+2", matched_numbers=2, matched_stars=2, prize_amount=16.27),
-                PrizeTier(tier=9, name="3+1", matched_numbers=3, matched_stars=1, prize_amount=12.06),
-                PrizeTier(tier=10, name="3+0", matched_numbers=3, matched_stars=0, prize_amount=9.16),
-                PrizeTier(tier=11, name="1+2", matched_numbers=1, matched_stars=2, prize_amount=7.80),
-                PrizeTier(tier=12, name="2+1", matched_numbers=2, matched_stars=1, prize_amount=5.67),
-                PrizeTier(tier=13, name="2+0", matched_numbers=2, matched_stars=0, prize_amount=3.72),
-                PrizeTier(tier=14, name="1+1", matched_numbers=1, matched_stars=1, prize_amount=4.13),
-                PrizeTier(tier=15, name="0+2", matched_numbers=0, matched_stars=2, prize_amount=5.00),
-            ]
-            db.add_all(default_tiers)
+        # Seed default prize tiers (upsert — only inserts missing tiers)
+        default_tiers = [
+            (1, "5+2", 5, 2, 0.0),
+            (2, "5+1", 5, 1, 365514.68),
+            (3, "5+0", 5, 0, 21356.70),
+            (4, "4+2", 4, 2, 2157.43),
+            (5, "4+1", 4, 1, 134.16),
+            (6, "3+2", 3, 2, 71.27),
+            (7, "4+0", 4, 0, 44.13),
+            (8, "2+2", 2, 2, 16.27),
+            (9, "3+1", 3, 1, 12.06),
+            (10, "3+0", 3, 0, 9.16),
+            (11, "1+2", 1, 2, 7.80),
+            (12, "2+1", 2, 1, 5.67),
+            (13, "2+0", 2, 0, 3.72),
+            (14, "1+1", 1, 1, 4.13),
+            (15, "0+2", 0, 2, 5.00),
+        ]
+        for tier_num, name, mn, ms, amount in default_tiers:
+            existing = db.query(PrizeTier).filter(PrizeTier.tier == tier_num).first()
+            if not existing:
+                db.add(PrizeTier(tier=tier_num, name=name, matched_numbers=mn, matched_stars=ms, prize_amount=amount))
 
         db.commit()
     finally:
