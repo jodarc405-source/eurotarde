@@ -1,3 +1,9 @@
+databases:
+  - name: eurotarde-db
+    plan: free
+    databaseName: eurotarde
+    user: eurotarde
+
 services:
   - type: web
     name: eurotarde
@@ -9,7 +15,9 @@ services:
       - key: ***REDACTED***
         generateValue: true
       - key: DATABASE_URL
-        value: sqlite:///eurotarde.db
+        fromDatabase:
+          name: eurotarde-db
+          property: connectionString
       - key: ADMIN_DEFAULT_USERNAME
         value: admin
       - key: ADMIN_DEFAULT_PASSWORD
