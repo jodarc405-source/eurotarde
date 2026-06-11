@@ -22,7 +22,9 @@ def determine_prize(matched_numbers: int, matched_stars: int,
 
     for tier in prize_tiers:
         if tier.matched_numbers == matched_numbers and tier.matched_stars == matched_stars:
+            print(f"[DEBUG] Prize found: {matched_numbers}+{matched_stars} = tier {tier.tier} ({tier.name}) = {tier.prize_amount}")
             return tier.prize_amount
+    print(f"[DEBUG] No prize tier found for {matched_numbers}+{matched_stars}, tiers_count={len(prize_tiers)}")
     return 0.0
 
 

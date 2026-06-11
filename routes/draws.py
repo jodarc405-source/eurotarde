@@ -67,13 +67,20 @@ async def list_draws(
     draw_results = {}
     my_keys_list = []  # list of {numbers: [...], stars: [...]}
     user_id = request.session.get('user_id')
+    print(f"[DEBUG] user_id={user_id}, total_draws={len(draws)}")
     if user_id:
         # Get user's keys for highlighting
         keys = get_my_keys(db, user_id=user_id)
         my_keys_list = [{"numbers": json.loads(k.numbers), "stars": json.loads(k.stars)} for k in keys]
+        print(f"[DEBUG] Found {len(keys)} keys for user_id={user_id}")
+        for k in keys:
+            print(f"[DEBUG]   Key {k.id}: numbers={k.numbers}, stars={k.stars}")
         for draw in draws:
             results = check_all_my_keys_against_draw(db, draw.id, user_id=user_id)
             wins = [r for r in results if r["prize"] > 0]
+            print(f"[DEBUG] Draw {draw.id} ({draw.draw_date}): {len(results)} results, {len(wins)} wins")
+            for r in results:
+                print(f"[DEBUG]   -> matched={r['matched_numbers']}+{r['matched_stars']}, prize={r['prize']}")
             if wins:
                 draw_results[draw.id] = wins
 
