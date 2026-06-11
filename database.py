@@ -115,8 +115,6 @@ def init_db():
             (11, "1+2", 1, 2, 7.80),
             (12, "2+1", 2, 1, 5.67),
             (13, "2+0", 2, 0, 3.72),
-            (14, "1+1", 1, 1, 4.13),
-            (15, "0+2", 0, 2, 5.00),
         ]
         for tier_num, name, mn, ms, amount in default_tiers:
             existing = db.query(PrizeTier).filter(PrizeTier.tier == tier_num).first()
