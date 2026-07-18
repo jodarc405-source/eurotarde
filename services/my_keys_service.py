@@ -105,3 +105,92 @@ def get_all_my_keys_results(db: Session, user_id: int = 0) -> dict:
             "total_prize": sum(r["prize"] for r in results),
         }
     return all_results
+
+
+def get_distinct_user_ids_with_keys(db: Session) -> list[int]:
+    """Return all distinct user_ids that own at least one 'my key'."""
+    return [row[0] for row in db.query(Key.user_id)
+            .filter(Key.user_id != 0)
+            .distinct()
+            .all()]
+
+
+def update_prizes_for_all_users(db: Session) -> dict:
+    """Recompute prizes for each user's 'my keys' against every draw.
+
+    Returns a summary dict {user_id: total_prize}. Used after a new draw is
+    imported so every user's stored/dashboard prize figures stay current.
+    """
+    summary = {}
+    user_ids = get_distinct_user_ids_with_keys(db)
+    for uid in user_ids:
+        total = 0.0
+        my_keys = get_my_keys(db, user_id=uid)
+        for key in my_keys:
+            results = check_my_key_against_all_draws(db, key.id, user_id=uid)
+            total += sum(r["prize"] for r in results)
+        summary[uid] = round(total, 2)
+    return summary
+
+
+# ===== Society key (shared by all users, created by admin) =====
+
+def create_society_key(db: Session, numbers: list[int], stars: list[int], label: str = "Chave da Sociedade") -> Key:
+    """Create (or replace) the society key — one shared key for all users.
+
+    There can be only one active society key: if one exists, it is deleted
+    and a new one created (so the society key is always unique).
+    """
+    existing = get_society_key(db)
+    if existing:
+        db.delete(existing)
+        db.commit()
+    key = Key(
+        user_id=0,  # system / society
+        draw_id=0,
+        numbers=json.dumps(sorted(numbers)),
+        stars=json.dumps(sorted(stars)),
+        label=label,
+        is_society=True,
+    )
+    db.add(key)
+    db.commit()
+    db.refresh(key)
+    return key
+
+
+def get_society_key(db: Session) -> Key | None:
+    """Return the active society key (is_society=True), or None."""
+    return db.query(Key).filter(Key.is_society == True).order_by(Key.id.desc()).first()
+
+
+def get_society_key_results(db: Session) -> dict:
+    """Get results of the society key against all draws. Returns {key_id: [results]}."""
+    society_key = get_society_key(db)
+    if not society_key:
+        return {}
+    results = check_my_key_against_all_draws(db, society_key.id, user_id=0)
+    return {
+        society_key.id: {
+            "key": society_key,
+            "wins": results,
+            "total_prize": sum(r["prize"] for r in results),
+        }
+    }
+
+
+def get_society_prizes_2026(db: Session) -> float:
+    """Sum of prizes won by the society key across all 2026 draws."""
+    from datetime import date as d
+    society_key = get_society_key(db)
+    if not society_key:
+        return 0.0
+    results = check_my_key_against_all_draws(db, society_key.id, user_id=0)
+    year_start = d(2026, 1, 1)
+    year_end = d(2026, 12, 31)
+    total = 0.0
+    for r in results:
+        draw_date = d.fromisoformat(r["draw_date"])
+        if year_start <= draw_date <= year_end:
+            total += r["prize"]
+    return round(total, 2)

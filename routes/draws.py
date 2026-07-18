@@ -5,47 +5,27 @@ from sqlalchemy.orm import Session
 from database import get_db
 from services.draw_service import get_draws, get_draw_by_id, get_distinct_years, get_distinct_months
 from services.key_checker import check_key_against_draw, determine_prize
-from services.my_keys_service import (
-    create_my_key, get_my_keys, get_my_key_by_id, delete_my_key,
-    get_all_my_keys_results, check_all_my_keys_against_draw
-)
+from services.my_keys_service import get_society_key_results, get_society_key, check_all_my_keys_against_draw
+from services.auth_service import require_auth
 from models.prize import PrizeTier
 
 router = APIRouter()
 
 
-# ========== MINHAS CHAVES (must be before /{draw_id}) ==========
+# ========== CHAVE DA SOCIEDADE (must be before /{draw_id}) ==========
+# Users no longer create their own keys — everything is based on the single
+# society key created by the admin. This page shows the society key results.
 
-@router.get("/sorteios/my-keys", response_class=HTMLResponse)
+@router.get("/sorteios/my-keys", response_class=HTMLResponse,
+            dependencies=[Depends(require_auth)])
 async def my_keys_page(request: Request, db: Session = Depends(get_db)):
-    user_id = request.session.get('user_id', 0)
-    all_results = get_all_my_keys_results(db, user_id=user_id)
+    from services.my_keys_service import get_society_key_results, get_society_key
+    all_results = get_society_key_results(db)
     return request.app.state.templates.TemplateResponse("draws/my_keys.html", {
         "request": request,
         "all_results": all_results,
+        "is_society": True,
     })
-
-
-@router.post("/sorteios/my-keys/create")
-async def my_keys_create(
-    request: Request,
-    n1: int = Form(...), n2: int = Form(...), n3: int = Form(...), n4: int = Form(...), n5: int = Form(...),
-    s1: int = Form(...), s2: int = Form(...),
-    label: str = Form(""),
-    db: Session = Depends(get_db),
-):
-    numbers = sorted([n1, n2, n3, n4, n5])
-    stars = sorted([s1, s2])
-    user_id = request.session.get('user_id', 0)
-    create_my_key(db, numbers, stars, label, user_id=user_id)
-    return RedirectResponse(url="/sorteios/my-keys", status_code=302)
-
-
-@router.post("/sorteios/my-keys/{key_id}/delete")
-async def my_keys_delete(key_id: int, request: Request, db: Session = Depends(get_db)):
-    user_id = request.session.get('user_id', 0)
-    delete_my_key(db, key_id, user_id=user_id)
-    return RedirectResponse(url="/sorteios/my-keys", status_code=302)
 
 
 # ========== LIST & DETAIL ==========
@@ -63,16 +43,17 @@ async def list_draws(
     years = get_distinct_years(db)
     months = get_distinct_months(db, year=year) if year else []
 
-    # For each draw, check if any of "my keys" won a prize
+    # For each draw, check if the society key won a prize
     draw_results = {}
     my_keys_list = []  # list of {numbers: [...], stars: [...]}
-    user_id = request.session.get('user_id')
-    if user_id:
-        # Get user's keys for highlighting
-        keys = get_my_keys(db, user_id=user_id)
-        my_keys_list = [{"numbers": json.loads(k.numbers), "stars": json.loads(k.stars)} for k in keys]
+    society_key = get_society_key(db)
+    if society_key:
+        my_keys_list = [{
+            "numbers": json.loads(society_key.numbers),
+            "stars": json.loads(society_key.stars)
+        }]
         for draw in draws:
-            results = check_all_my_keys_against_draw(db, draw.id, user_id=user_id)
+            results = check_all_my_keys_against_draw(db, draw.id, user_id=0)
             wins = [r for r in results if r["prize"] > 0]
             if wins:
                 draw_results[draw.id] = wins
@@ -99,19 +80,20 @@ async def draw_detail(draw_id: int, request: Request, db: Session = Depends(get_
     draw_numbers = json.loads(draw.numbers)
     draw_stars = json.loads(draw.stars)
 
-    # Check my keys for this draw
+    # Check society key for this draw
     my_keys_wins = []
-    user_id = request.session.get('user_id')
-    if user_id:
-        my_keys_wins = check_all_my_keys_against_draw(db, draw_id, user_id=user_id)
+    society_key = get_society_key(db)
+    if society_key:
+        my_keys_wins = check_all_my_keys_against_draw(db, draw_id, user_id=0)
         my_keys_wins = [w for w in my_keys_wins if w["prize"] > 0]
 
-    # Get user's keys for highlighting
+    # Get society key for highlighting
     my_keys_list = []
-    user_id = request.session.get('user_id')
-    if user_id:
-        keys = get_my_keys(db, user_id=user_id)
-        my_keys_list = [{"numbers": json.loads(k.numbers), "stars": json.loads(k.stars)} for k in keys]
+    if society_key:
+        my_keys_list = [{
+            "numbers": json.loads(society_key.numbers),
+            "stars": json.loads(society_key.stars)
+        }]
 
     # Prize tiers for breakdown
     prize_tiers = db.query(PrizeTier).filter(PrizeTier.is_active == True).order_by(PrizeTier.tier).all()

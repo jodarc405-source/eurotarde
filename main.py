@@ -1,6 +1,7 @@
 import json
 import logging
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -49,6 +50,8 @@ templates = Jinja2Templates(directory="templates")
 
 from jinja2 import pass_context
 
+from services.flash_service import flash
+
 @pass_context
 def get_flashed_messages(context, with_categories=False):
     request = context["request"]
@@ -58,16 +61,20 @@ def get_flashed_messages(context, with_categories=False):
         return [(m.get("category", "info"), m.get("message", "")) if isinstance(m, dict) else ("info", m) for m in messages]
     return [m.get("message", m) if isinstance(m, dict) else m for m in messages]
 
-@pass_context
-def flash(context, message, category="info"):
-    if "flashed" not in context["request"].session:
-        context["request"].session["flashed"] = []
-    context["request"].session["flashed"].append({"message": message, "category": category})
-
 templates.env.globals["get_flashed_messages"] = get_flashed_messages
 templates.env.globals["flash"] = flash
 templates.env.filters["fromjson"] = lambda v: json.loads(v) if isinstance(v, str) else v
 app.state.templates = templates
+
+
+# Exception handler: redirect unauthenticated (401) requests to login.
+# Used by the require_auth dependency on protected routes (e.g. /sorteios/my-keys).
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == 401:
+        return RedirectResponse(url="/auth/login", status_code=302)
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
 # Include routers

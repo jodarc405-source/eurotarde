@@ -58,9 +58,11 @@ def update_payment(db: Session, payment_id: int, amount: float | None = None, pa
 
 
 def get_user_weeks_paid(db: Session, user_id: int) -> list[dict]:
-    """Get 52 weeks for a user, marking which are paid based on total payments.
+    """Get 52 weeks for a user, marking which are paid.
 
     Each week costs €1. Payments accumulate and extend the paid period.
+    Additionally, all weeks up to the CURRENT week of 2026 are forced to
+    'paid' (objective: "colocar todos os utilizadores pagos até à semana corrente").
     Returns a list of 52 week dicts with: week_number, date_start, date_end, paid, month
     """
     from datetime import date, timedelta
@@ -82,6 +84,9 @@ def get_user_weeks_paid(db: Session, user_id: int) -> list[dict]:
     today = date.today()
     year_start = date(today.year, 1, 1)
 
+    # Current week of the year (ISO)
+    current_week = int(today.strftime("%V"))
+
     # Find Monday of week 1
     monday = year_start - timedelta(days=year_start.weekday())
 
@@ -93,11 +98,13 @@ def get_user_weeks_paid(db: Session, user_id: int) -> list[dict]:
         # Determine the month this week belongs to (by the Wednesday of the week)
         wednesday = week_start + timedelta(days=2)
         month_name = MONTH_NAMES[wednesday.month - 1]
+        # Paid if: explicit payment covers it OR it's at/before the current week
+        paid = (week_num <= weeks_paid) or (week_num <= current_week)
         weeks.append({
             "week_number": week_num,
             "date_start": week_start.strftime("%d/%m"),
             "date_end": week_end.strftime("%d/%m"),
-            "paid": week_num <= weeks_paid,
+            "paid": paid,
             "current": week_start <= today <= week_end,
             "month": month_name,
             "month_num": wednesday.month,
@@ -152,3 +159,102 @@ def get_total_payments_by_user(db: Session) -> list[dict]:
         .all()
     )
     return [{"user_id": r[0], "total": float(r[1])} for r in results]
+
+
+# ===== Prize Pool (for "spend prizes" feature) =====
+
+def get_prize_pool(db: Session) -> float:
+    """Get the current available prize pool (single-row table)."""
+    from models.prize_pool import PrizePool
+    pool = db.query(PrizePool).order_by(PrizePool.id).first()
+    if pool is None:
+        pool = PrizePool(available=0.0)
+        db.add(pool)
+        db.commit()
+        db.refresh(pool)
+    return float(pool.available)
+
+
+def top_up_prize_pool(db: Session, amount: float) -> float:
+    """Add `amount` to the prize pool (e.g. after importing 2026 draws)."""
+    from models.prize_pool import PrizePool
+    pool = db.query(PrizePool).order_by(PrizePool.id).first()
+    if pool is None:
+        pool = PrizePool(available=0.0)
+        db.add(pool)
+        db.commit()
+        db.refresh(pool)
+    pool.available = float(pool.available) + float(amount)
+    db.commit()
+    db.refresh(pool)
+    return float(pool.available)
+
+
+def get_total_society_payouts(db: Session) -> float:
+    """Sum of all 'gastar prémios' payouts (notes='Prémio distribuído ...').
+
+    This is the 'prémio utilizado' shown on the home page: the total €1-per-user
+    payouts distributed from the prize pool.
+    """
+    from sqlalchemy import func
+    total = db.query(func.sum(Payment.amount)).filter(
+        Payment.notes.like("Prémio distribuído%")
+    ).scalar() or 0.0
+    return round(float(total), 2)
+
+
+def spend_prizes_on_users(db: Session, payment_date=None) -> dict:
+    """Distribute the prize pool as €1 payments to each active non-admin user.
+
+    Spends 1€ per user until the pool is exhausted. Returns a summary dict:
+        {"distributed": float, "remaining": float, "users_paid": int, "per_user": float}
+    """
+    from datetime import date
+    from models.prize_pool import PrizePool
+    from models.user import User
+
+    if payment_date is None:
+        payment_date = date.today()
+
+    pool = db.query(PrizePool).order_by(PrizePool.id).first()
+    if pool is None:
+        pool = PrizePool(available=0.0)
+        db.add(pool)
+        db.commit()
+        db.refresh(pool)
+
+    available = float(pool.available)
+    if available <= 0:
+        return {"distributed": 0.0, "remaining": 0.0, "users_paid": 0, "per_user": 0.0}
+
+    # Active, non-admin users
+    users = db.query(User).filter(User.is_admin == False, User.is_active == True).all()
+    if not users:
+        return {"distributed": 0.0, "remaining": available, "users_paid": 0, "per_user": 0.0}
+
+    n_users = len(users)
+    # Each user gets 1€ while there's enough; remainder stays in pool
+    per_user = int(available) // n_users  # whole euros per user
+    if per_user < 1:
+        # Not enough for a full €1 per user — give 1€ to as many as possible
+        users_paid = int(available)
+        per_user = 1
+    else:
+        users_paid = n_users
+
+    distributed = 0.0
+    for u in users[:users_paid]:
+        create_payment(db, u.id, None, float(per_user), payment_date,
+                       "Prémio distribuído (gastar prémios)")
+        distributed += float(per_user)
+
+    pool.available = available - distributed
+    db.commit()
+    db.refresh(pool)
+
+    return {
+        "distributed": round(distributed, 2),
+        "remaining": round(float(pool.available), 2),
+        "users_paid": users_paid,
+        "per_user": float(per_user),
+    }

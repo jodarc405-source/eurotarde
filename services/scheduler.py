@@ -5,7 +5,10 @@ from apscheduler.triggers.cron import CronTrigger
 from database import SessionLocal
 from services.euromillions_api import fetch_latest_draw, fetch_all_draws_last_n_months
 from services.draw_service import get_draw_by_date, create_draw
-from services.my_keys_service import check_all_my_keys_against_draw
+from services.my_keys_service import (
+    check_all_my_keys_against_draw,
+    update_prizes_for_all_users,
+)
 from models.draw import Draw
 
 logger = logging.getLogger(__name__)
@@ -71,10 +74,16 @@ def update_draws():
                 )
                 logger.info(f"New draw added for {draw_date}")
 
-                wins = check_all_my_keys_against_draw(db, new_draw.id)
-                winning = [w for w in wins if w["prize"] > 0]
-                if winning:
-                    logger.info(f"MY KEYS WON! {len(winning)} key(s) matched!")
+                # Recompute prizes for every user's 'my keys' against the new draw.
+                wins_by_user = {}
+                for uid in get_distinct_user_ids_with_keys(db):
+                    wins = check_all_my_keys_against_draw(db, new_draw.id, user_id=uid)
+                    winning = [w for w in wins if w["prize"] > 0]
+                    if winning:
+                        wins_by_user[uid] = len(winning)
+                        logger.info(f"[user {uid}] MY KEYS WON! {len(winning)} key(s) matched!")
+                # Also update the system-level (user_id=0) keys.
+                check_all_my_keys_against_draw(db, new_draw.id)
             else:
                 logger.info(f"Draw for {draw_date} already exists, skipping.")
         finally:

@@ -28,46 +28,48 @@
             <div class="card-body">
                 <i class="fas fa-euro-sign fa-2x mb-2" style="color: var(--accent-light); opacity: 0.7;"></i>
                 <h3 class="text-warning" id="stat-prizes">{{ '{:,.2f}'.format(total_prizes_2026) }}€</h3>
-                <p class="text-muted mb-0">Prémios 2026</p>
+                <p class="text-muted mb-0">Prémios 2026 (Sociedade)</p>
             </div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="card shadow stat-card">
-            <div class="card-body" style="cursor: pointer;" onclick="window.location='/semanas'">
-                <i class="fas fa-key fa-2x mb-2" style="color: var(--info); opacity: 0.7;"></i>
-                <h3 class="text-info">{{ my_keys_count }}</h3>
-                <p class="text-muted mb-0">Minhas Chaves</p>
+            <div class="card-body" style="cursor: pointer;" onclick="window.location='/pagamentos'">
+                <i class="fas fa-gift fa-2x mb-2" style="color: var(--info); opacity: 0.7;"></i>
+                <h3 class="text-info" id="stat-used">{{ '{:,.2f}'.format(premio_utilizado) }}€</h3>
+                <p class="text-muted mb-0">Prémio Utilizado</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- My Keys Prize Summary -->
-{% if my_keys_count > 0 %}
+<!-- Chave da Sociedade Prize Summary -->
+{% if all_results %}
 <div class="card shadow mb-4" style="border-color: rgba(245,158,11,0.3) !important;">
     <div class="card-header" style="background: rgba(245,158,11,0.1) !important;">
         <h5 class="mb-0" style="color: var(--accent-light);">
-            <i class="fas fa-key me-2"></i>Minhas Chaves — Resumo de Prémios
+            <i class="fas fa-users me-2"></i>Chave da Sociedade — Resumo de Prémios
         </h5>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-3 col-sm-6 text-center mb-3">
                 <div class="p-3 rounded" style="background: var(--bg-glass);">
-                    <h4 style="color: var(--primary-light); font-weight: 800;">{{ my_keys_count }}</h4>
-                    <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Chaves Ativas</small>
+                    <h4 style="color: var(--success-light); font-weight: 800;">{{ all_results.values()|list|length }}</h4>
+                    <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Chave Ativa</small>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6 text-center mb-3">
                 <div class="p-3 rounded" style="background: var(--bg-glass);">
-                    <h4 style="color: var(--success-light); font-weight: 800;">{{ my_keys_total_wins }}</h4>
-                    <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Chaves Premiadas</small>
+                    {% set total_wins = all_results.values()|list|sum(attribute='wins')|length %}
+                    <h4 style="color: var(--success-light); font-weight: 800;">{{ total_wins }}</h4>
+                    <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Sorteios Premiados</small>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6 text-center mb-3">
                 <div class="p-3 rounded" style="background: var(--bg-glass);">
-                    <h4 style="color: var(--accent-light); font-weight: 800;">{{ '{:,.2f}'.format(my_keys_total_prize) }} €</h4>
+                    {% set total_prize = all_results.values()|list|sum(attribute='total_prize') %}
+                    <h4 style="color: var(--accent-light); font-weight: 800;">{{ '{:,.2f}'.format(total_prize) }} €</h4>
                     <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Total Ganho</small>
                 </div>
             </div>
@@ -94,24 +96,16 @@
                     {% for key_id, data in all_results.items() %}
                     <tr>
                         <td style="color: var(--text-primary); font-weight: 600;">
-                            {% if data.key.label %}{{ data.key.label }}{% else %}Chave {{ key_id }}{% endif %}
+                            {% if data.key.label %}{{ data.key.label }}{% else %}Chave da Sociedade{% endif %}
                         </td>
                         <td>
-                            {% for n in data.key.numbers|fromjson %}
-                            <span class="euro-ball" style="width:26px;height:26px;font-size:0.65rem;">{{ n }}</span>
-                            {% endfor %}
+                            {% for n in data.key.numbers|fromjson %}<span class="euro-ball" style="width:26px;height:26px;font-size:0.65rem;">{{ n }}</span>{% endfor %}
                         </td>
                         <td>
-                            {% for s in data.key.stars|fromjson %}
-                            <span class="euro-star" style="width:26px;height:26px;font-size:0.65rem;"><i class="fas fa-star"></i>{{ s }}</span>
-                            {% endfor %}
+                            {% for s in data.key.stars|fromjson %}<span class="euro-star" style="width:26px;height:26px;font-size:0.65rem;"><i class="fas fa-star"></i>{{ s }}</span>{% endfor %}
                         </td>
                         <td class="text-center">
-                            {% if data.wins %}
-                            <span class="badge bg-success">{{ data.wins|length }}</span>
-                            {% else %}
-                            <span class="badge bg-secondary">0</span>
-                            {% endif %}
+                            {% if data.wins %}<span class="badge bg-success">{{ data.wins|length }}</span>{% else %}<span class="badge bg-secondary">0</span>{% endif %}
                         </td>
                         <td class="text-end" style="color: {{ 'var(--accent-light)' if data.total_prize > 0 else 'var(--text-muted)' }}; font-weight: 700;">
                             {{ '{:,.2f}'.format(data.total_prize) }} €
@@ -121,6 +115,14 @@
                 </tbody>
             </table>
         </div>
+    </div>
+</div>
+{% else %}
+<div class="card shadow mb-4">
+    <div class="card-body text-center py-4">
+        <i class="fas fa-users fa-2x mb-3" style="color: var(--text-muted); opacity: 0.3;"></i>
+        <h5 class="text-muted">Chave da Sociedade não definida</h5>
+        <p class="text-muted" style="font-size: 0.85rem;">O administrador deve criar a chave da sociedade em <a href="/admin/society-key">Gestão → Chave da Sociedade</a>.</p>
     </div>
 </div>
 {% endif %}

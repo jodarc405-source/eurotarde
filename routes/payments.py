@@ -9,6 +9,7 @@ from services.payment_service import (
 )
 from services.auth_service import get_all_users
 from services.draw_service import get_all_draws
+from services.flash_service import flash
 
 router = APIRouter()
 
@@ -81,4 +82,16 @@ async def edit_payment_submit(
 @router.post("/pagamentos/{payment_id}/delete")
 async def delete_payment_route(payment_id: int, request: Request, db: Session = Depends(get_db)):
     delete_payment(db, payment_id)
+    return RedirectResponse(url="/pagamentos", status_code=302)
+
+
+@router.post("/pagamentos/spend-prizes")
+async def spend_prizes_route(request: Request, db: Session = Depends(get_db)):
+    """Distribute available prize pool as €1 payments to each user (gastar prémios)."""
+    from services.payment_service import spend_prizes_on_users
+    result = spend_prizes_on_users(db)
+    if result["distributed"] > 0:
+        flash(request, f"Prémios distribuídos: {result['distributed']}€ para {result['users_paid']} utilizador(es). Restante no fundo: {result['remaining']}€", "success")
+    else:
+        flash(request, "Não há prémios disponíveis para distribuir.", "info")
     return RedirectResponse(url="/pagamentos", status_code=302)

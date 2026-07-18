@@ -1,6 +1,22 @@
 import bcrypt
 from sqlalchemy.orm import Session
+from fastapi import Request
+from fastapi.responses import RedirectResponse
 from models.user import User
+
+
+def require_auth(request: Request):
+    """FastAPI dependency: ensure the request is authenticated.
+
+    Raises HTTPException(401) when there is no logged-in user. A global
+    exception handler (registered in main.py) converts 401 into a redirect to
+    /auth/login. This prevents endpoints from silently operating under
+    user_id=0 (which made saved keys appear to 'disappear' after re-login).
+    """
+    user_id = request.session.get("user_id")
+    if not user_id:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="Authentication required")
 
 
 def hash_password(password: str) -> str:

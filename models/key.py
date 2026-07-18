@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -16,6 +16,7 @@ class Key(Base):
     matched_stars = Column(Integer, default=0)
     prize_won = Column(Float, default=0.0)
     label = Column(String(100), nullable=True, default="")
+    is_society = Column(Boolean, default=False, nullable=False)  # True = chave da sociedade (partilhada)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="keys")

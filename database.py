@@ -52,6 +52,14 @@ def init_db():
             conn.commit()
         logger.info("Migration: added 'label' column to keys table")
 
+    # Migration: add 'is_society' column to keys table if missing
+    keys_cols = [col["name"] for col in inspector.get_columns("keys")]
+    if "is_society" not in keys_cols:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE keys ADD COLUMN is_society BOOLEAN DEFAULT 0"))
+            conn.commit()
+        logger.info("Migration: added 'is_society' column to keys table")
+
     # Migration: make payments.draw_id nullable (was NOT NULL, need NULL for quota payments)
     payments_cols = [col["name"] for col in inspector.get_columns("payments")]
     if "draw_id" in payments_cols:

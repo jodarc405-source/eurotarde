@@ -27,24 +27,19 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     users = db.query(User).filter(User.is_active == True).all()
     draws = get_all_draws(db)
 
-    # My keys prize stats
-    user_id = request.session.get('user_id', 0)
-    my_keys_results = get_all_my_keys_results(db, user_id=user_id)
-    my_keys_count = len(my_keys_results)
-    my_keys_total_wins = sum(1 for d in my_keys_results.values() if d["wins"])
-    my_keys_total_prize = sum(d["total_prize"] for d in my_keys_results.values())
+    # Prémios 2026 = soma dos prémios da CHAVE DA SOCIEDADE (criada pelo admin)
+    # em todos os sorteios de 2026.
+    from services.my_keys_service import get_society_prizes_2026
+    total_prizes_2026 = get_society_prizes_2026(db)
 
-    # Total prémios 2026 — cálculo dinâmico: verifica cada "minha chave" contra todos os draws de 2026
-    year_start = date(2026, 1, 1)
-    year_end = date(2026, 12, 31)
-    draws_2026 = [d for d in draws if year_start <= d.draw_date <= year_end]
-    total_prizes_2026 = 0.0
-    for d in draws_2026:
-        results = check_all_my_keys_against_draw(db, d.id, user_id=user_id)
-        total_prizes_2026 += sum(r["prize"] for r in results)
+    # Prémio utilizado = soma dos pagamentos de 1€ (gastar prémios) dividido
+    # pelos utilizadores (cada utilizador recebe 1€ por ação de "gastar prémios").
+    from services.payment_service import get_total_society_payouts
+    premio_utilizado = get_total_society_payouts(db)
 
     # Analytics — only for admin
     analytics = None
+    user_id = request.session.get('user_id', 0)
     current_user = db.query(User).filter(User.id == user_id).first()
     if current_user and current_user.is_admin:
         analytics = {
@@ -61,10 +56,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
         "request": request,
         "users": users,
         "draws": draws,
-        "my_keys_count": my_keys_count,
-        "my_keys_total_wins": my_keys_total_wins,
-        "my_keys_total_prize": my_keys_total_prize,
         "total_prizes_2026": float(total_prizes_2026),
-        "all_results": my_keys_results,
+        "premio_utilizado": float(premio_utilizado),
         "analytics": analytics,
     })

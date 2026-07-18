@@ -15,8 +15,10 @@ class Draw(Base):
     is_manual = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    keys = relationship("Key", back_populates="draw", cascade="all, delete-orphan")
-    payments = relationship("Payment", back_populates="draw", cascade="all, delete-orphan")
+    # NOTE: cascade="all" (no delete-orphan) — see models/user.py for rationale.
+    # This prevents the admin "clear draws" action from orphan-deleting rows.
+    keys = relationship("Key", back_populates="draw", cascade="all")
+    payments = relationship("Payment", back_populates="draw", cascade="all")
 
     def __repr__(self):
         return f"<Draw(id={self.id}, date='{self.draw_date}')>"

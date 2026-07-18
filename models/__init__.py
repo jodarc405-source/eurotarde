@@ -4,5 +4,6 @@ from .key import Key
 from .payment import Payment
 from .prize import PrizeTier
 from .page_view import PageView
+from .prize_pool import PrizePool
 
-__all__ = ["User", "Draw", "Key", "Payment", "PrizeTier", "PageView"]
+__all__ = ["User", "Draw", "Key", "Payment", "PrizeTier", "PageView", "PrizePool"]
