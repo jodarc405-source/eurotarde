@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from services.draw_service import get_draws, get_draw_by_id, get_distinct_years, get_distinct_months
 from services.key_checker import check_key_against_draw, determine_prize
-from services.my_keys_service import get_society_key_results, get_society_key, check_all_my_keys_against_draw
+from services.my_keys_service import get_society_key_results, get_society_key, check_all_my_keys_against_draw, check_society_key_against_draw
 from services.auth_service import require_auth
 from models.prize import PrizeTier
 
@@ -53,7 +53,7 @@ async def list_draws(
             "stars": json.loads(society_key.stars)
         }]
         for draw in draws:
-            results = check_all_my_keys_against_draw(db, draw.id, user_id=0)
+            results = check_society_key_against_draw(db, draw.id)
             wins = [r for r in results if r["prize"] > 0]
             if wins:
                 draw_results[draw.id] = wins
@@ -84,7 +84,7 @@ async def draw_detail(draw_id: int, request: Request, db: Session = Depends(get_
     my_keys_wins = []
     society_key = get_society_key(db)
     if society_key:
-        my_keys_wins = check_all_my_keys_against_draw(db, draw_id, user_id=0)
+        my_keys_wins = check_society_key_against_draw(db, draw_id)
         my_keys_wins = [w for w in my_keys_wins if w["prize"] > 0]
 
     # Get society key for highlighting

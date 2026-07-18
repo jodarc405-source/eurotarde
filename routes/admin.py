@@ -10,6 +10,7 @@ from services.euromillions_api import fetch_all_draws_last_n_months, fetch_lates
 from models.prize import PrizeTier
 from models.user import User
 from models.draw import Draw
+from services.flash_service import flash
 
 router = APIRouter()
 
@@ -208,4 +209,17 @@ async def society_key_submit(
     numbers = sorted([n1, n2, n3, n4, n5])
     stars = sorted([s1, s2])
     create_society_key(db, numbers, stars, label)
+    return RedirectResponse(url="/admin/society-key", status_code=302)
+
+
+@router.post("/admin/keys/cleanup")
+async def cleanup_test_keys(request: Request, db: Session = Depends(get_db)):
+    """Delete test/seed keys: any key with user_id=0 that is NOT the society key."""
+    from models.key import Key
+    deleted = db.query(Key).filter(
+        Key.user_id == 0,
+        Key.is_society == False,
+    ).delete()
+    db.commit()
+    flash(request, f"{deleted} chave(s) de teste apagada(s).", "success")
     return RedirectResponse(url="/admin/society-key", status_code=302)

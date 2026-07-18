@@ -194,3 +194,19 @@ def get_society_prizes_2026(db: Session) -> float:
         if year_start <= draw_date <= year_end:
             total += r["prize"]
     return round(total, 2)
+
+
+def check_society_key_against_draw(db: Session, draw_id: int) -> list[dict]:
+    """Check ONLY the society key against a specific draw.
+
+    Unlike check_all_my_keys_against_draw(db, draw_id, user_id=0) — which
+    picks up EVERY key with user_id=0 (including test/seed keys) — this
+    uses just the single active society key, so prizes are never double-counted.
+    """
+    society_key = get_society_key(db)
+    if not society_key:
+        return []
+    result = check_my_key_against_draw(db, society_key.id, draw_id, user_id=0)
+    if "error" not in result:
+        return [result]
+    return []

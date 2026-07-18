@@ -73,4 +73,22 @@
         </form>
     </div>
 </div>
+
+<!-- Cleanup test keys -->
+<div class="card shadow mb-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-trash me-2"></i>Limpeza de Chaves de Teste</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3" style="font-size: 0.85rem;">
+            Apaga todas as chaves de teste (chaves com <code>user_id=0</code> que não são a chave da sociedade).
+            Isto corrige valores de prémios duplicados.
+        </p>
+        <form method="POST" action="/admin/keys/cleanup" onsubmit="return confirm('Apagar todas as chaves de teste?');">
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="fas fa-trash me-1"></i>Apagar Chaves de Teste
+            </button>
+        </form>
+    </div>
+</div>
 {% endblock %}

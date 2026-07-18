@@ -7,7 +7,8 @@ from services.euromillions_api import fetch_latest_draw, fetch_all_draws_last_n_
 from services.draw_service import get_draw_by_date, create_draw
 from services.my_keys_service import (
     check_all_my_keys_against_draw,
-    update_prizes_for_all_users,
+    check_society_key_against_draw,
+    get_distinct_user_ids_with_keys,
 )
 from models.draw import Draw
 
@@ -16,7 +17,9 @@ scheduler = BackgroundScheduler()
 
 
 def import_recent_draws():
-    """Import draws from the last 6 months. Runs on startup."""
+    """Import draws from the last 6 months (and fill any gaps up to today).
+    Runs on startup.
+    """
     logger.info("Importing recent Euromillions draws...")
     try:
         draws = fetch_all_draws_last_n_months(months=6)
@@ -42,7 +45,8 @@ def import_recent_draws():
                         is_manual=False,
                     )
                     added += 1
-                    check_all_my_keys_against_draw(db, new_draw.id)
+                    # Check society key against the new draw only (no double-counting)
+                    check_society_key_against_draw(db, new_draw.id)
             logger.info(f"Import complete: {added} new draws added.")
         finally:
             db.close()
@@ -51,43 +55,41 @@ def import_recent_draws():
 
 
 def update_draws():
-    """Job to update Euromillions draws. Called by scheduler every Tue & Fri at 21:00."""
+    """Job to update Euromillions draws.
+
+    Called by scheduler every day at 21:00. Fetches the latest draw and,
+    if it is a new draw date, adds it. Also fills any missing draws between
+    the last stored draw and today (so the list is always up to date).
+    """
     logger.info("Running scheduled draw update...")
     try:
+        # 1) Fetch and add the latest draw if new
         draw_data = fetch_latest_draw()
-        if not draw_data or not draw_data.get("numbers"):
+        if draw_data and draw_data.get("numbers"):
+            db = SessionLocal()
+            try:
+                draw_date = date.fromisoformat(draw_data["date"])
+                existing = get_draw_by_date(db, draw_date)
+                if not existing:
+                    new_draw = create_draw(
+                        db,
+                        draw_date=draw_date,
+                        numbers=draw_data["numbers"],
+                        stars=draw_data["stars"],
+                        prize_total=draw_data.get("prize_total", 0.0),
+                        is_manual=False,
+                    )
+                    logger.info(f"New draw added for {draw_date}")
+                    check_society_key_against_draw(db, new_draw.id)
+                else:
+                    logger.info(f"Draw for {draw_date} already exists, skipping.")
+            finally:
+                db.close()
+        else:
             logger.warning("Could not fetch latest draw data.")
-            return
 
-        db = SessionLocal()
-        try:
-            draw_date = date.fromisoformat(draw_data["date"])
-            existing = get_draw_by_date(db, draw_date)
-            if not existing:
-                new_draw = create_draw(
-                    db,
-                    draw_date=draw_date,
-                    numbers=draw_data["numbers"],
-                    stars=draw_data["stars"],
-                    prize_total=draw_data.get("prize_total", 0.0),
-                    is_manual=False,
-                )
-                logger.info(f"New draw added for {draw_date}")
-
-                # Recompute prizes for every user's 'my keys' against the new draw.
-                wins_by_user = {}
-                for uid in get_distinct_user_ids_with_keys(db):
-                    wins = check_all_my_keys_against_draw(db, new_draw.id, user_id=uid)
-                    winning = [w for w in wins if w["prize"] > 0]
-                    if winning:
-                        wins_by_user[uid] = len(winning)
-                        logger.info(f"[user {uid}] MY KEYS WON! {len(winning)} key(s) matched!")
-                # Also update the system-level (user_id=0) keys.
-                check_all_my_keys_against_draw(db, new_draw.id)
-            else:
-                logger.info(f"Draw for {draw_date} already exists, skipping.")
-        finally:
-            db.close()
+        # 2) Fill any gaps: re-import last 6 months to catch missed draws
+        import_recent_draws()
     except Exception as e:
         logger.error(f"Error in update_draws job: {e}")
 
@@ -96,17 +98,18 @@ def start_scheduler():
     """Start the APScheduler with all jobs."""
     import_recent_draws()
 
-    # Euromillions draws happen Tuesday & Friday ~20:00 CET
-    # We check at 21:00 to ensure results are available
+    # Euromillions draws happen Tuesday & Friday ~20:00 CET.
+    # We check daily at 21:00 to ensure results are available and
+    # to fill any gaps so the draws list stays current up to today.
     scheduler.add_job(
         update_draws,
-        trigger=CronTrigger(day_of_week="tue,fri", hour=21, minute=0),
+        trigger=CronTrigger(day_of_week="mon,tue,wed,thu,fri,sat,sun", hour=21, minute=0),
         id="update_draws",
         name="Update Euromillions Draws",
         replace_existing=True,
     )
     scheduler.start()
-    logger.info("Scheduler started. Draws will update Tue & Fri at 21:00.")
+    logger.info("Scheduler started. Draws will update every day at 21:00.")
 
 
 def stop_scheduler():

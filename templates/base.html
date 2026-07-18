@@ -30,9 +30,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/sorteios"><i class="fas fa-ticket me-1"></i>Sorteios</a>
                     </li>
+                    {% if request.session.get('is_admin') %}
                     <li class="nav-item">
-                        <a class="nav-link" href="/sorteios/my-keys"><i class="fas fa-key me-1"></i>Minhas Chaves</a>
+                        <a class="nav-link" href="/sorteios/my-keys"><i class="fas fa-key me-1"></i>Chave da Sociedade</a>
                     </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="/semanas"><i class="fas fa-calendar-week me-1"></i>Semanas 2026</a>
                     </li>
