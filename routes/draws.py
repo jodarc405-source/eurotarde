@@ -21,11 +21,33 @@ router = APIRouter()
 async def my_keys_page(request: Request, db: Session = Depends(get_db)):
     from services.my_keys_service import get_society_key_results, get_society_key
     all_results = get_society_key_results(db)
+    society_key = get_society_key(db)
     return request.app.state.templates.TemplateResponse("draws/my_keys.html", {
         "request": request,
         "all_results": all_results,
         "is_society": True,
+        "society_key": society_key,  # None if not yet created
     })
+
+
+@router.post("/sorteios/my-keys/create")
+async def my_keys_create(
+    request: Request,
+    n1: int = Form(...), n2: int = Form(...), n3: int = Form(...), n4: int = Form(...), n5: int = Form(...),
+    s1: int = Form(...), s2: int = Form(...),
+    label: str = Form("Chave da Sociedade"),
+    db: Session = Depends(get_db),
+):
+    """Create the society key (shared by all users).
+
+    Any authenticated user may create it when it does not yet exist.
+    The admin can also do this from /admin/society-key.
+    """
+    from services.my_keys_service import create_society_key
+    numbers = sorted([n1, n2, n3, n4, n5])
+    stars = sorted([s1, s2])
+    create_society_key(db, numbers, stars, label)
+    return RedirectResponse(url="/sorteios/my-keys", status_code=302)
 
 
 # ========== LIST & DETAIL ==========
