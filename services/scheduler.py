@@ -58,6 +58,17 @@ def import_recent_draws():
         logger.error(f"Error importing draws: {e}")
 
 
+def import_recent_draws_async():
+    """Run import_recent_draws in a background thread so it does NOT block
+    the uvicorn boot (Render free tier has a tight boot timeout; a synchronous
+    50+ request scrape on startup can exceed it and leave the DB empty).
+    """
+    import threading
+    t = threading.Thread(target=import_recent_draws, daemon=True)
+    t.start()
+    logger.info("Scheduled recent-draws import on background thread.")
+
+
 def update_draws():
     """Job to update Euromillions draws.
 
@@ -104,7 +115,10 @@ def update_draws():
 
 def start_scheduler():
     """Start the APScheduler with all jobs."""
-    import_recent_draws()
+    # Import recent draws on a background thread so the uvicorn boot is NOT
+    # blocked (Render free tier has a tight boot timeout; a synchronous
+    # 50+ request scrape on startup can exceed it and leave the DB empty).
+    import_recent_draws_async()
 
     # Euromillions draws happen Tuesday & Friday ~20:00 CET (Portugal).
     # We run the importer shortly after, at 21:00, on terça & sexta only,

@@ -144,6 +144,32 @@ async def startup_event():
     logger.info("Eurotarde is ready!")
 
 
+@app.get("/health", tags=["system"])
+async def health_check():
+    """Lightweight health/diagnostics endpoint (no auth).
+
+    Returns draw/prize counts so we can verify the DB was populated
+    after a deploy without needing an admin login.
+    """
+    from database import SessionLocal
+    from models.draw import Draw
+    from models.draw_prize import DrawPrize
+    from models.key import Key
+    db = SessionLocal()
+    try:
+        draws = db.query(Draw).count()
+        with_prizes = db.query(DrawPrize).count()
+        society = db.query(Key).filter(Key.is_society == True).count()
+        return {
+            "status": "ok",
+            "draws": draws,
+            "draws_with_prizes": with_prizes,
+            "society_keys": society,
+        }
+    finally:
+        db.close()
+
+
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Shutting down Eurotarde...")
