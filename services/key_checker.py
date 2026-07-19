@@ -14,12 +14,26 @@ def check_key_against_draw(numbers: list[int], stars: list[int],
 
 
 def determine_prize(matched_numbers: int, matched_stars: int,
-                    prize_tiers: list[PrizeTier], jackpot_total: float = 0.0) -> float:
-    """Determine prize amount based on matches and prize tiers list."""
+                    prize_tiers: list[PrizeTier], jackpot_total: float = 0.0,
+                    draw_id: int = None, db=None) -> float:
+    """Determine prize amount based on matches.
+
+    Uses the REAL per-draw prize breakdown (DrawPrize) when available —
+    Euromillions prizes vary every draw, so the static prize_tiers table is
+    only a fallback. The 5+2 jackpot always comes from `jackpot_total`.
+    """
     # Special case: 5+2 wins the jackpot
     if matched_numbers == 5 and matched_stars == 2:
         return jackpot_total
 
+    # Prefer the real per-draw amounts (Portugal breakdown)
+    if draw_id is not None and db is not None:
+        from services.prize_service import prize_for_tier
+        real = prize_for_tier(db, draw_id, matched_numbers, matched_stars)
+        if real is not None:
+            return real
+
+    # Fallback to the static prize tiers table
     for tier in prize_tiers:
         if tier.matched_numbers == matched_numbers and tier.matched_stars == matched_stars:
             return tier.prize_amount
@@ -48,7 +62,7 @@ def check_user_keys_for_draw(db: Session, user_id: int, draw_id: int) -> list[Ke
 
         key.matched_numbers = matched_numbers
         key.matched_stars = matched_stars
-        key.prize_won = determine_prize(matched_numbers, matched_stars, prize_tiers, draw.prize_total)
+        key.prize_won = determine_prize(matched_numbers, matched_stars, prize_tiers, draw.prize_total, draw_id=draw.id, db=db)
 
     db.commit()
     return keys

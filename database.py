@@ -98,6 +98,13 @@ def init_db():
             # PostgreSQL or other backend: PRAGMA not supported, column likely already nullable
             logger.warning(f"Skipping SQLite-specific payments migration on this backend: {e}")
 
+    # Migration: create draw_prizes table if missing (real per-draw prize amounts)
+    from sqlalchemy import inspect as _inspect
+    inspector2 = _inspect(engine)
+    if "draw_prizes" not in inspector2.get_table_names():
+        Base.metadata.create_all(bind=engine, tables=[Base.metadata.tables["draw_prizes"]])
+        logger.info("Migration: created draw_prizes table")
+
     db = SessionLocal()
     try:
         # Seed admin user if not exists

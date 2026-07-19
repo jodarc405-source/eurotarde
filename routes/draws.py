@@ -117,9 +117,17 @@ async def draw_detail(draw_id: int, request: Request, db: Session = Depends(get_
             "stars": json.loads(society_key.stars)
         }]
 
-    # Prize tiers for breakdown
-    prize_tiers = db.query(PrizeTier).filter(PrizeTier.is_active == True).order_by(PrizeTier.tier).all()
-    prize_breakdown = [{"tier": t.tier, "name": t.name, "prize": float(t.prize_amount)} for t in prize_tiers]
+    # Prize breakdown — use the REAL per-draw Portugal amounts when stored,
+    # falling back to the static prize_tiers table otherwise.
+    from services.prize_service import get_draw_prizes
+    real_prizes = get_draw_prizes(db, draw.id)
+    if real_prizes:
+        prize_breakdown = [
+            {"name": k, "prize": float(v)} for k, v in real_prizes.items()
+        ]
+    else:
+        prize_tiers = db.query(PrizeTier).filter(PrizeTier.is_active == True).order_by(PrizeTier.tier).all()
+        prize_breakdown = [{"name": t.name, "prize": float(t.prize_amount)} for t in prize_tiers]
 
     return request.app.state.templates.TemplateResponse("draws/detail.html", {
         "request": request,

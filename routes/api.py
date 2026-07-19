@@ -86,7 +86,7 @@ async def api_check_key(
     draw_stars = json.loads(draw.stars)
     mn, ms = check_key_against_draw(numbers, stars, draw_numbers, draw_stars)
     tiers = db.query(PrizeTier).filter(PrizeTier.is_active == True).all()
-    prize = determine_prize(mn, ms, tiers, draw.prize_total)
+    prize = determine_prize(mn, ms, tiers, draw.prize_total, draw_id=draw.id, db=db)
 
     return JSONResponse(content={
         "matched_numbers": mn,

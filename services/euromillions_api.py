@@ -85,6 +85,74 @@ def _parse_result_row(tr: BeautifulSoup) -> dict | None:
         return None
 
 
+def _parse_pt_prize_breakdown(soup: BeautifulSoup) -> dict:
+    """Parse the Portugal (#PrizePT) prize-per-winner breakdown table.
+
+    Returns a dict keyed by "M+S" (e.g. "5+2") -> prize per winner (float).
+    Euromillions prizes vary every draw, so this is the authoritative source
+    for the real prize amounts of a given draw.
+    """
+    section = soup.find(id="PrizePT")
+    if not section:
+        return {}
+    # The table sits inside the section div
+    table = section.find("table")
+    if not table:
+        return {}
+
+    prizes: dict[str, float] = {}
+    for tr in table.find_all("tr"):
+        name_span = tr.find("span", class_="prizeName")
+        if not name_span:
+            continue
+        balls = [b.get_text(strip=True) for b in name_span.find_all("span", class_="ball")]
+        stars = [s.get_text(strip=True) for s in name_span.find_all("span", class_="star")]
+        if not balls:
+            continue
+        mn = int(balls[0])
+        ms = int(stars[0]) if stars else 0
+        key = f"{mn}+{ms}"
+
+        prize_td = tr.find("td", attrs={"data-title": "Prize Per Winner"})
+        if not prize_td:
+            continue
+        raw = prize_td.get_text(strip=True).replace("&euro;", "").replace("€", "")
+        raw = re.sub(r"[^0-9.]", "", raw)
+        try:
+            prizes[key] = float(raw) if raw else 0.0
+        except ValueError:
+            prizes[key] = 0.0
+    return prizes
+
+
+def _scrape_draw_detail(url: str, retries: int = 3) -> dict:
+    """Fetch a single draw detail page and return its Portugal prize breakdown.
+
+    Retries with a short backoff because the source occasionally returns
+    403 (rate-limiting / recaptcha challenge) on individual detail pages.
+    Returns {} if the breakdown can't be fetched after retries.
+    """
+    for attempt in range(1, retries + 1):
+        try:
+            resp = SESSION.get(url, timeout=15)
+            if resp.status_code == 403 and attempt < retries:
+                logger.debug(f"403 on {url} (attempt {attempt}), retrying...")
+                import time
+                time.sleep(2 * attempt)
+                continue
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, "html.parser")
+            return _parse_pt_prize_breakdown(soup)
+        except Exception as e:
+            if attempt < retries:
+                import time
+                time.sleep(2 * attempt)
+                continue
+            logger.warning(f"Failed to fetch draw detail {url}: {e}")
+            return {}
+    return {}
+
+
 def _scrape_results_page(url: str) -> list[dict]:
     """Fetch a results page and return parsed draw dicts (most recent first).
     Returns empty list on any error (404, timeout, parse failure, etc.)."""
@@ -173,6 +241,17 @@ def fetch_draws_for_date(date_str: str) -> dict | None:
     url = f"{EURO_MILLIONS_BASE}/results/{d.strftime('%d-%m-%Y')}"
     draws = _scrape_results_page(url)
     return draws[0] if draws else None
+
+
+def fetch_draw_prizes(date_str: str) -> dict:
+    """Fetch the Portugal prize-per-winner breakdown for a specific draw date.
+
+    Returns a dict keyed by "M+S" (e.g. "5+2") -> prize per winner (float).
+    Empty dict if the breakdown page is unavailable.
+    """
+    d = date.fromisoformat(date_str)
+    url = f"{EURO_MILLIONS_BASE}/results/{d.strftime('%d-%m-%Y')}"
+    return _scrape_draw_detail(url)
 
 
 # Backwards-compatibility alias

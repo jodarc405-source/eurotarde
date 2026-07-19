@@ -6,7 +6,8 @@ from models.draw import Draw
 
 
 def create_draw(db: Session, draw_date: date, numbers: list[int], stars: list[int],
-                prize_total: float = 0.0, is_manual: bool = False) -> Draw:
+                prize_total: float = 0.0, is_manual: bool = False,
+                prizes: dict[str, float] = None) -> Draw:
     draw = Draw(
         draw_date=draw_date,
         numbers=json.dumps(sorted(numbers)),
@@ -17,6 +18,10 @@ def create_draw(db: Session, draw_date: date, numbers: list[int], stars: list[in
     db.add(draw)
     db.commit()
     db.refresh(draw)
+    # Store the real per-draw Portugal prize breakdown, if provided
+    if prizes:
+        from services.prize_service import save_draw_prizes
+        save_draw_prizes(db, draw.id, prizes)
     return draw
 
 

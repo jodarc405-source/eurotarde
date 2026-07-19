@@ -54,7 +54,7 @@ def check_my_key_against_draw(db: Session, key_id: int, draw_id: int, user_id: i
 
     mn, ms = check_key_against_draw(key_numbers, key_stars, draw_numbers, draw_stars)
     tiers = db.query(PrizeTier).filter(PrizeTier.is_active == True).all()
-    prize = determine_prize(mn, ms, tiers, draw.prize_total)
+    prize = determine_prize(mn, ms, tiers, draw.prize_total, draw_id=draw.id, db=db)
 
     return {
         "key_id": key_id,
@@ -194,6 +194,33 @@ def get_society_prizes_2026(db: Session) -> float:
         if year_start <= draw_date <= year_end:
             total += r["prize"]
     return round(total, 2)
+
+
+def get_society_key_results_2026(db: Session) -> dict:
+    """Like get_society_key_results, but restricted to 2026 draws only.
+
+    Returns {key_id: {"key":..., "wins": [2026 results], "total_prize": sum}}.
+    This keeps the home-page 'Total Ganho' card consistent with the
+    'Prémios 2026' stat card (both reflect 2026 only).
+    """
+    society_key = get_society_key(db)
+    if not society_key:
+        return {}
+    from datetime import date as d
+    all_results = check_my_key_against_all_draws(db, society_key.id, user_id=0)
+    year_start = d(2026, 1, 1)
+    year_end = d(2026, 12, 31)
+    wins_2026 = [
+        r for r in all_results
+        if year_start <= d.fromisoformat(r["draw_date"]) <= year_end
+    ]
+    return {
+        society_key.id: {
+            "key": society_key,
+            "wins": wins_2026,
+            "total_prize": round(sum(r["prize"] for r in wins_2026), 2),
+        }
+    }
 
 
 def check_society_key_against_draw(db: Session, draw_id: int) -> list[dict]:

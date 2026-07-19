@@ -36,6 +36,9 @@ def import_recent_draws():
                 draw_date = date.fromisoformat(draw_data["date"])
                 existing = get_draw_by_date(db, draw_date)
                 if not existing:
+                    # Fetch the real Portugal prize breakdown for this draw
+                    from services.euromillions_api import fetch_draw_prizes
+                    prizes = fetch_draw_prizes(draw_data["date"])
                     new_draw = create_draw(
                         db,
                         draw_date=draw_date,
@@ -43,6 +46,7 @@ def import_recent_draws():
                         stars=draw_data["stars"],
                         prize_total=draw_data.get("prize_total", 0.0),
                         is_manual=False,
+                        prizes=prizes,
                     )
                     added += 1
                     # Check society key against the new draw only (no double-counting)
@@ -71,6 +75,9 @@ def update_draws():
                 draw_date = date.fromisoformat(draw_data["date"])
                 existing = get_draw_by_date(db, draw_date)
                 if not existing:
+                    # Fetch the real Portugal prize breakdown for this draw
+                    from services.euromillions_api import fetch_draw_prizes
+                    prizes = fetch_draw_prizes(draw_data["date"])
                     new_draw = create_draw(
                         db,
                         draw_date=draw_date,
@@ -78,6 +85,7 @@ def update_draws():
                         stars=draw_data["stars"],
                         prize_total=draw_data.get("prize_total", 0.0),
                         is_manual=False,
+                        prizes=prizes,
                     )
                     logger.info(f"New draw added for {draw_date}")
                     check_society_key_against_draw(db, new_draw.id)
@@ -98,18 +106,18 @@ def start_scheduler():
     """Start the APScheduler with all jobs."""
     import_recent_draws()
 
-    # Euromillions draws happen Tuesday & Friday ~20:00 CET.
-    # We check daily at 21:00 to ensure results are available and
-    # to fill any gaps so the draws list stays current up to today.
+    # Euromillions draws happen Tuesday & Friday ~20:00 CET (Portugal).
+    # We run the importer shortly after, at 21:00, on terça & sexta only,
+    # so draws + prize breakdowns are fetched once results are published.
     scheduler.add_job(
         update_draws,
-        trigger=CronTrigger(day_of_week="mon,tue,wed,thu,fri,sat,sun", hour=21, minute=0),
+        trigger=CronTrigger(day_of_week="tue,fri", hour=21, minute=0),
         id="update_draws",
-        name="Update Euromillions Draws",
+        name="Update Euromillions Draws (Terça & Sexta)",
         replace_existing=True,
     )
     scheduler.start()
-    logger.info("Scheduler started. Draws will update every day at 21:00.")
+    logger.info("Scheduler started. Draws will update Tuesdays & Fridays at 21:00.")
 
 
 def stop_scheduler():

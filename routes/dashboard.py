@@ -32,10 +32,10 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     from services.my_keys_service import get_society_prizes_2026
     total_prizes_2026 = get_society_prizes_2026(db)
 
-    # Chave da Sociedade (resultados) — precisa ser passada ao template para a
-    # home mostrar o resumo quando a chave existe (e NÃO mostrar "não definida"
-    # de forma mentirosa quando a chave já está guardada).
-    all_results = get_society_key_results(db)
+    # Chave da Sociedade (resultados) — 2026 only, so the home 'Total Ganho'
+    # card matches the 'Prémios 2026' stat card above.
+    from services.my_keys_service import get_society_key_results_2026
+    all_results = get_society_key_results_2026(db)
     # Total de sorteios premiados (soma do nº de wins de cada chave) — calculado
     # no Python porque o filtro Jinja sum(attribute='wins') não soma listas.
     total_wins = sum(len(d.get("wins", [])) for d in all_results.values())
