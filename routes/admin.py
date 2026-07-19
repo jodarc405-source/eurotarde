@@ -159,6 +159,7 @@ async def import_draws_page(request: Request, db: Session = Depends(get_db)):
 @router.post("/admin/draws/import")
 async def import_draws_submit(request: Request, db: Session = Depends(get_db)):
     from datetime import date as date_t
+    from services.euromillions_api import fetch_draw_prizes
     draws = fetch_all_draws_last_n_months(months=6)
     added = 0
     for draw_data in draws:
@@ -167,6 +168,7 @@ async def import_draws_submit(request: Request, db: Session = Depends(get_db)):
         draw_date = date_t.fromisoformat(draw_data["date"])
         existing = get_draw_by_date(db, draw_date)
         if not existing:
+            prizes = fetch_draw_prizes(draw_data["date"])
             create_draw(
                 db,
                 draw_date=draw_date,
@@ -174,9 +176,64 @@ async def import_draws_submit(request: Request, db: Session = Depends(get_db)):
                 stars=draw_data["stars"],
                 prize_total=draw_data.get("prize_total", 0.0),
                 is_manual=False,
+                prizes=prizes,
             )
             added += 1
     return RedirectResponse(url="/sorteios?imported=" + str(added), status_code=302)
+
+
+@router.post("/admin/draws/refresh-full")
+async def refresh_full_submit(request: Request, db: Session = Depends(get_db)):
+    """Full backfill: import missing draws, fetch real prize breakdowns for
+    every draw, and recompute society-key prizes. Runs the same logic as
+    update_draws_and_prizes.py, triggered on demand (e.g. right after a
+    deploy to a fresh database)."""
+    from datetime import date as date_t
+    from services.euromillions_api import (
+        fetch_all_draws_last_n_months,
+        fetch_draw_prizes,
+    )
+    from services.draw_service import get_all_draws
+    from services.prize_service import get_draw_prizes, save_draw_prizes
+    from services.my_keys_service import (
+        check_society_key_against_draw,
+        get_society_key,
+    )
+
+    # 1) Import missing draws (last ~8 months) with real prize breakdowns
+    draws = fetch_all_draws_last_n_months(months=8)
+    added = 0
+    for d in draws:
+        if not d or not d.get("numbers"):
+            continue
+        dd = date_t.fromisoformat(d["date"])
+        if not get_draw_by_date(db, dd):
+            prizes = fetch_draw_prizes(d["date"])
+            create_draw(
+                db, draw_date=dd, numbers=d["numbers"], stars=d["stars"],
+                prize_total=d.get("prize_total", 0.0), is_manual=False,
+                prizes=prizes,
+            )
+            added += 1
+
+    # 2) Backfill prize breakdowns for any existing draw missing them
+    missing = [dr for dr in get_all_draws(db) if not get_draw_prizes(db, dr.id)]
+    backfilled = 0
+    for dr in missing:
+        prizes = fetch_draw_prizes(dr.draw_date.isoformat())
+        if prizes:
+            save_draw_prizes(db, dr.id, prizes)
+            backfilled += 1
+
+    # 3) Recompute society-key prizes against every draw
+    recomputed = 0
+    if get_society_key(db):
+        for dr in get_all_draws(db):
+            check_society_key_against_draw(db, dr.id)
+        recomputed = 1
+
+    flash(request, f"{added} sorteios novos, {backfilled} com prémios preenchidos.", "success")
+    return RedirectResponse(url="/admin/draws/import", status_code=302)
 
 
 @router.post("/admin/draws/clear")

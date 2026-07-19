@@ -153,20 +153,35 @@ def _scrape_draw_detail(url: str, retries: int = 3) -> dict:
     return {}
 
 
-def _scrape_results_page(url: str) -> list[dict]:
+def _scrape_results_page(url: str, retries: int = 3) -> list[dict]:
     """Fetch a results page and return parsed draw dicts (most recent first).
-    Returns empty list on any error (404, timeout, parse failure, etc.)."""
-    try:
-        resp = SESSION.get(url, timeout=15)
-        if resp.status_code == 404:
-            logger.debug(f"No results page at {url} (404)")
+    Returns empty list on any error (404, timeout, parse failure, etc.).
+    Retries on transient 403s (rate-limiting) with a short backoff.
+    """
+    for attempt in range(1, retries + 1):
+        try:
+            resp = SESSION.get(url, timeout=15)
+            if resp.status_code == 403 and attempt < retries:
+                logger.debug(f"403 on {url} (attempt {attempt}), retrying...")
+                import time
+                time.sleep(2 * attempt)
+                continue
+            if resp.status_code == 404:
+                logger.debug(f"No results page at {url} (404)")
+                return []
+            resp.raise_for_status()
+            break
+        except requests.HTTPError as e:
+            logger.warning(f"HTTP error fetching {url}: {e}")
             return []
-        resp.raise_for_status()
-    except requests.HTTPError as e:
-        logger.warning(f"HTTP error fetching {url}: {e}")
-        return []
-    except Exception as e:
-        logger.warning(f"Failed to fetch {url}: {e}")
+        except Exception as e:
+            if attempt < retries:
+                import time
+                time.sleep(2 * attempt)
+                continue
+            logger.warning(f"Failed to fetch {url}: {e}")
+            return []
+    else:
         return []
 
     soup = BeautifulSoup(resp.text, "html.parser")
