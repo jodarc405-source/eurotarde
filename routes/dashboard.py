@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from database import get_db
 from services.draw_service import get_all_draws
-from services.my_keys_service import get_all_my_keys_results, check_all_my_keys_against_draw
+from services.my_keys_service import get_all_my_keys_results, check_all_my_keys_against_draw, get_society_key_results
 from services.analytics import (
     get_total_views, get_today_views, get_views_this_week,
     get_unique_visitors_today, get_unique_visitors_total, get_top_pages,
@@ -32,6 +32,14 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     from services.my_keys_service import get_society_prizes_2026
     total_prizes_2026 = get_society_prizes_2026(db)
 
+    # Chave da Sociedade (resultados) — precisa ser passada ao template para a
+    # home mostrar o resumo quando a chave existe (e NÃO mostrar "não definida"
+    # de forma mentirosa quando a chave já está guardada).
+    all_results = get_society_key_results(db)
+    # Total de sorteios premiados (soma do nº de wins de cada chave) — calculado
+    # no Python porque o filtro Jinja sum(attribute='wins') não soma listas.
+    total_wins = sum(len(d.get("wins", [])) for d in all_results.values())
+
     # Prémio utilizado = soma dos pagamentos de 1€ (gastar prémios) dividido
     # pelos utilizadores (cada utilizador recebe 1€ por ação de "gastar prémios").
     from services.payment_service import get_total_society_payouts
@@ -59,4 +67,6 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
         "total_prizes_2026": float(total_prizes_2026),
         "premio_utilizado": float(premio_utilizado),
         "analytics": analytics,
+        "all_results": all_results,
+        "total_wins": total_wins,
     })
