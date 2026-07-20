@@ -8,14 +8,26 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
+# Normalize the DB URL so SQLAlchemy uses the right driver.
+# We pin the psycopg (v3) driver explicitly: psycopg2-binary is a precompiled
+# native extension that breaks on Python 3.14+ (undefined symbol crash), while
+# `psycopg` (v3) is pure-Python and works on any Python version.  SQLAlchemy
+# defaults to psycopg2 for `postgresql://` URLs, so we rewrite the scheme to
+# `postgresql+psycopg://` to force the v3 driver.
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgresql+psycopg2://"):
+    db_url = "postgresql+psycopg://" + db_url[len("postgresql+psycopg2://"):]
+elif db_url.startswith("postgresql://"):
+    db_url = "postgresql+psycopg://" + db_url[len("postgresql://"):]
+
 connect_args = {}
-if "sqlite" in settings.DATABASE_URL:
+if db_url.startswith("sqlite"):
     connect_args["check_same_thread"] = False
-elif "postgresql" in settings.DATABASE_URL:
+elif "postgresql" in db_url:
     connect_args["sslmode"] = "require"
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    db_url,
     connect_args=connect_args,
     pool_pre_ping=True,
 )
