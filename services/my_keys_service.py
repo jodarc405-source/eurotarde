@@ -11,7 +11,7 @@ def create_my_key(db: Session, numbers: list[int], stars: list[int], label: str 
     """Create a new 'my key' — a persistent key that gets checked against all draws."""
     key = Key(
         user_id=user_id,
-        draw_id=0,  # 0 = not tied to a specific draw
+        draw_id=None,  # not tied to a specific draw (FK is nullable)
         numbers=json.dumps(sorted(numbers)),
         stars=json.dumps(sorted(stars)),
         label=label,
@@ -146,8 +146,8 @@ def create_society_key(db: Session, numbers: list[int], stars: list[int], label:
         db.delete(existing)
         db.commit()
     key = Key(
-        user_id=0,  # system / society
-        draw_id=0,
+        user_id=None,  # system / society key (no owner) — FK column is nullable
+        draw_id=None,  # not tied to a specific draw — FK column is nullable
         numbers=json.dumps(sorted(numbers)),
         stars=json.dumps(sorted(stars)),
         label=label,

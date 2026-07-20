@@ -72,6 +72,15 @@ def init_db():
             conn.commit()
         logger.info("Migration: added 'is_society' column to keys table")
 
+    # Migration: make keys.user_id nullable (society/system keys have no owner).
+    # PostgreSQL enforces FK constraints, so user_id=0/None must be allowed.
+    if "postgresql" in db_url:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE keys ALTER COLUMN user_id DROP NOT NULL"))
+            conn.execute(text("ALTER TABLE keys ALTER COLUMN draw_id DROP NOT NULL"))
+            conn.commit()
+        logger.info("Migration: keys.user_id/draw_id are now nullable (PostgreSQL)")
+
     # Migration: make payments.draw_id nullable (was NOT NULL, need NULL for quota payments)
     # NOTE: This is SQLite-specific. PostgreSQL handles nullable columns differently,
     # so we skip it on non-SQLite backends to avoid breaking init_db() in production.

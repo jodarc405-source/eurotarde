@@ -8,8 +8,8 @@ class Key(Base):
     __tablename__ = "keys"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    draw_id = Column(Integer, ForeignKey("draws.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # nullable: society/system keys use None
+    draw_id = Column(Integer, ForeignKey("draws.id"), nullable=True)  # nullable: society keys not tied to a draw
     numbers = Column(String(100), nullable=False)  # JSON array of 5 ints
     stars = Column(String(50), nullable=False)     # JSON array of 2 ints
     matched_numbers = Column(Integer, default=0)
