@@ -139,8 +139,19 @@ async def track_page_views(request: Request, call_next):
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting Eurotarde application...")
-    init_db()
-    start_scheduler()
+    # NOTE: defensive startup. A failure in init_db / start_scheduler must NOT
+    # crash uvicorn — otherwise Render marks the deploy as failed and keeps
+    # serving the previous (stale) build. Log and continue instead.
+    try:
+        init_db()
+        logger.info("Database initialized.")
+    except Exception as e:
+        logger.error(f"init_db failed (continuing anyway): {e}")
+    try:
+        start_scheduler()
+        logger.info("Scheduler started.")
+    except Exception as e:
+        logger.error(f"start_scheduler failed (continuing anyway): {e}")
     logger.info("Eurotarde is ready!")
 
 
