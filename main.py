@@ -162,7 +162,7 @@ async def health_check():
     Returns draw/prize counts so we can verify the DB was populated
     after a deploy without needing an admin login.
     """
-    from database import SessionLocal
+    from database import SessionLocal, engine
     from models.draw import Draw
     from models.draw_prize import DrawPrize
     from models.key import Key
@@ -176,6 +176,17 @@ async def health_check():
             "draws": draws,
             "draws_with_prizes": with_prizes,
             "society_keys": society,
+        }
+    except Exception as e:
+        # Surface the real error instead of a generic 500 so we can debug
+        # environment-specific failures (e.g. driver/SSL issues on Render).
+        import traceback
+        logger.error(f"/health failed: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "db_url": str(engine.url).split("@")[-1],
+            "traceback": traceback.format_exc().splitlines()[-5:],
         }
     finally:
         db.close()
