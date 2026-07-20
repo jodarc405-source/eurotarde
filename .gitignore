@@ -19,6 +19,10 @@ Thumbs.db
 # Database (will be created on deploy)
 eurotarde.db
 
+# Local prod-backfill credentials (DO NOT COMMIT)
+prod_db_url.txt
+run_prod_backfill.py
+
 # Docs
 docs/
 

@@ -15,9 +15,7 @@ services:
       - key: ***REDACTED***
         value: ***REDACTED***
       - key: DATABASE_URL
-        fromDatabase:
-          name: eurotarde-db
-          property: connectionString
+        value: postgresql://eurotarde_user:zl2MlWeJ0Y5lAMGMZnicBehHMduaCEcg@dpg-d9ec01mrnols73dvfeo0-a.oregon-postgres.render.com/eurotarde
       - key: ADMIN_DEFAULT_USERNAME
         value: admin
       - key: ADMIN_DEFAULT_PASSWORD
