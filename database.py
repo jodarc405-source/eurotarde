@@ -8,13 +8,13 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
-# Normalize the DB URL so SQLAlchemy uses the right driver.
-# We pin the psycopg (v3) driver explicitly: psycopg2-binary is a precompiled
-# native extension that breaks on Python 3.14+ (undefined symbol crash), while
-# `psycopg` (v3) is pure-Python and works on any Python version.  SQLAlchemy
-# defaults to psycopg2 for `postgresql://` URLs, so we rewrite the scheme to
-# `postgresql+psycopg://` to force the v3 driver.
+# Normalize the DB URL so SQLAlchemy uses the right driver AND is robust to
+# whitespace/newlines that can sneak in when the value is pasted into the
+# Render dashboard (e.g. a line break splitting "5432" into "54\n32").
+# Strip every whitespace char, then rewrite the scheme to force psycopg v3.
 db_url = settings.DATABASE_URL
+if db_url:
+    db_url = "".join(db_url.split())  # remove all whitespace/newlines
 if db_url.startswith("postgresql+psycopg2://"):
     db_url = "postgresql+psycopg://" + db_url[len("postgresql+psycopg2://"):]
 elif db_url.startswith("postgresql://"):
