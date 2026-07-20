@@ -144,26 +144,6 @@ async def startup_event():
     logger.info("Eurotarde is ready!")
 
 
-@app.get("/dbg", tags=["system"])
-async def dbg():
-    """TEMP debug: reveal which DB the app is actually using (masked)."""
-    from config import get_settings
-    s = get_settings()
-    url = s.DATABASE_URL
-    # mask password
-    masked = url
-    if "://" in url:
-        pre, _, post = url.partition("://")
-        if "@" in post:
-            userpart, _, hostpart = post.partition("@")
-            if ":" in userpart:
-                u, _, _ = userpart.partition(":")
-                masked = f"{pre}://{u}:***@{hostpart}"
-            else:
-                masked = f"{pre}://{userpart}:***@{hostpart}"
-    return {"db_type": "postgres" if "postgresql" in url else "sqlite", "masked_url": masked}
-
-
 @app.get("/health", tags=["system"])
 async def health_check():
     """Lightweight health/diagnostics endpoint (no auth).
