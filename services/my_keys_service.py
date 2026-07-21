@@ -42,7 +42,10 @@ def delete_my_key(db: Session, key_id: int, user_id: int = 0) -> bool:
 
 def check_my_key_against_draw(db: Session, key_id: int, draw_id: int, user_id: int = 0) -> dict:
     """Check a specific my_key against a specific draw. Returns result dict."""
-    key = db.query(Key).filter(Key.id == key_id, Key.user_id == user_id).first()
+    query = db.query(Key).filter(Key.id == key_id)
+    if user_id is not None:
+        query = query.filter(Key.user_id == user_id)
+    key = query.first()
     draw = db.query(Draw).filter(Draw.id == draw_id).first()
     if not key or not draw:
         return {"error": "Key or draw not found"}
@@ -169,7 +172,7 @@ def get_society_key_results(db: Session) -> dict:
     society_key = get_society_key(db)
     if not society_key:
         return {}
-    results = check_my_key_against_all_draws(db, society_key.id, user_id=0)
+    results = check_my_key_against_all_draws(db, society_key.id, user_id=None)
     return {
         society_key.id: {
             "key": society_key,
@@ -185,7 +188,7 @@ def get_society_prizes_2026(db: Session) -> float:
     society_key = get_society_key(db)
     if not society_key:
         return 0.0
-    results = check_my_key_against_all_draws(db, society_key.id, user_id=0)
+    results = check_my_key_against_all_draws(db, society_key.id, user_id=None)
     year_start = d(2026, 1, 1)
     year_end = d(2026, 12, 31)
     total = 0.0
@@ -207,7 +210,7 @@ def get_society_key_results_2026(db: Session) -> dict:
     if not society_key:
         return {}
     from datetime import date as d
-    all_results = check_my_key_against_all_draws(db, society_key.id, user_id=0)
+    all_results = check_my_key_against_all_draws(db, society_key.id, user_id=None)
     year_start = d(2026, 1, 1)
     year_end = d(2026, 12, 31)
     wins_2026 = [
@@ -229,11 +232,15 @@ def check_society_key_against_draw(db: Session, draw_id: int) -> list[dict]:
     Unlike check_all_my_keys_against_draw(db, draw_id, user_id=0) — which
     picks up EVERY key with user_id=0 (including test/seed keys) — this
     uses just the single active society key, so prizes are never double-counted.
+
+    The society key has user_id=None (nullable FK), so we must look it up by
+    id WITHOUT filtering on user_id=0 — otherwise the lookup fails and the
+    Sorteios highlight silently disappears (pitfall: bceb8de set user_id=None).
     """
     society_key = get_society_key(db)
     if not society_key:
         return []
-    result = check_my_key_against_draw(db, society_key.id, draw_id, user_id=0)
+    result = check_my_key_against_draw(db, society_key.id, draw_id, user_id=None)
     if "error" not in result:
         return [result]
     return []

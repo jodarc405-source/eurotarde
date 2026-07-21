@@ -1,4 +1,10 @@
-"""Smoke test: non-admin user can create the society key from /sorteios/my-keys."""
+"""Test: only the ADMIN may create the society key from /sorteios/my-keys.
+
+Per the user's rule reversal (2026-07-21): the Chave da Sociedade is the single
+shared key used for ALL users and for the Sorteios highlight. Only the admin may
+create or change it. Non-admins must NOT see the create form, and a non-admin POST
+to /sorteios/my-keys/create must be rejected (HTTP 403 -> redirect with warning).
+"""
 import os
 import sys
 import tempfile
@@ -30,36 +36,57 @@ from fastapi.testclient import TestClient
 import main
 client = TestClient(main.app)
 
-# Login as normal user (Starlette TestClient follows redirects → 200 on success)
+# --- Non-admin flow ---
 r = client.post("/auth/login", data={"username": "joao", "password": "pass123"})
 assert r.status_code in (200, 302), f"login failed: {r.status_code}"
 print("PASS: non-admin login")
 
-# Access my-keys page — should show create form (no society key yet)
+# Access my-keys page — should NOT show create form (admin-only)
 r = client.get("/sorteios/my-keys")
 assert r.status_code == 200, f"my-keys failed: {r.status_code}"
-assert "Criar Chave da Sociedade" in r.text, "create form not shown"
-print("PASS: non-admin sees create form when no society key")
+assert "action=\"/sorteios/my-keys/create\"" not in r.text, "create form shown to non-admin"
+assert "apenas o" in r.text.lower() or "administrador" in r.text.lower(), "no admin-only notice"
+print("PASS: non-admin does NOT see create form (admin-only notice shown)")
 
-# Create the society key as non-admin
+# Non-admin POST must be rejected (403 -> redirect to my-keys with warning)
 r = client.post("/sorteios/my-keys/create", data={
     "n1": 1, "n2": 2, "n3": 3, "n4": 4, "n5": 5,
     "s1": 1, "s2": 2, "label": "Chave da Sociedade"
 }, follow_redirects=False)
-assert r.status_code == 302, f"create failed: {r.status_code}"
-print("PASS: non-admin can create society key")
+assert r.status_code in (302, 403), f"expected 302/403, got {r.status_code}"
+print("PASS: non-admin create blocked (403)")
 
-# Verify it exists in DB
+# Verify NO society key exists after the blocked attempt
 db = SessionLocal()
 from models.key import Key
 sk = db.query(Key).filter(Key.is_society == True).first()
 db.close()
-assert sk is not None, "society key not created"
+assert sk is None, "society key should NOT exist after non-admin attempt"
+print("PASS: no society key created by non-admin")
+
+# --- Admin flow (separate client / fresh login) ---
+client.post("/auth/logout", follow_redirects=True)
+r = client.post("/auth/login", data={"username": "admin", "password": "admin123"})
+assert r.status_code in (200, 302), f"admin login failed: {r.status_code}"
+print("PASS: admin login")
+
+# Admin sees the create form when no society key exists
+r = client.get("/sorteios/my-keys")
+assert "action=\"/sorteios/my-keys/create\"" in r.text, "admin should see create form"
+print("PASS: admin sees create form when no society key")
+
+# Admin creates the society key
+r = client.post("/sorteios/my-keys/create", data={
+    "n1": 1, "n2": 2, "n3": 3, "n4": 4, "n5": 5,
+    "s1": 1, "s2": 2, "label": "Chave da Sociedade"
+}, follow_redirects=False)
+assert r.status_code == 302, f"admin create failed: {r.status_code}"
+print("PASS: admin can create society key")
+
+db = SessionLocal()
+sk = db.query(Key).filter(Key.is_society == True).first()
+db.close()
+assert sk is not None, "society key not created by admin"
 print("PASS: society key in DB (id=%s)" % sk.id)
 
-# Page now shows results, not create form
-r = client.get("/sorteios/my-keys")
-assert "Criar Chave da Sociedade" not in r.text, "form still shown after creation"
-print("PASS: create form hidden after key exists")
-
-print("\nALL NON-ADMIN CREATE TESTS PASSED")
+print("\nALL SOCIETY-KEY ACCESS-CONTROL TESTS PASSED")

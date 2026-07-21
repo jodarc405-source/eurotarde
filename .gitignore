@@ -24,3 +24,8 @@ docs/
 
 # Local settings
 .openclaude/
+
+# Production secrets / local credentials (NUNCA commitar)
+prod_db_url.txt
+*.tar.gz
+run_prod_backfill.py

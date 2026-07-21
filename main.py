@@ -73,6 +73,15 @@ app.state.templates = templates
 async def http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 401:
         return RedirectResponse(url="/auth/login", status_code=302)
+    if exc.status_code == 403:
+        # Forbidden — usually a non-admin hitting an admin-only action.
+        # Flash a message and send them back to the society-key page.
+        if "flashed" not in request.session:
+            request.session["flashed"] = []
+        request.session["flashed"].append(
+            {"message": exc.detail or "Não tens permissão para esta ação.", "category": "warning"}
+        )
+        return RedirectResponse(url="/sorteios/my-keys", status_code=302)
     from fastapi.responses import JSONResponse
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 

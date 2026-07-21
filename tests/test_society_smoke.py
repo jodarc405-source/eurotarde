@@ -118,8 +118,8 @@ db.close()
 
 r = client.get("/sorteios")
 assert r.status_code == 200, f"sorteios list failed: {r.status_code}"
-# The draw should show "chave(s)" premiada(s) or prize info
-assert "premiada" in r.text.lower() or "Prémio" in r.text or "€" in r.text, "sorteios list missing prize info for society key"
-print("PASS: sorteios list shows society key prizes")
+# The draw should show the society key as "Chave premiada" (singular, 1 key)
+assert "Chave premiada" in r.text, "sorteios list missing 'Chave premiada' for society key"
+print("PASS: sorteios list shows society key as 'Chave premiada'")
 
 print("\nALL SMOKE TESTS PASSED")

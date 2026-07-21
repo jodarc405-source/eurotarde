@@ -19,6 +19,23 @@ def require_auth(request: Request):
         raise HTTPException(status_code=401, detail="Authentication required")
 
 
+def require_admin(request: Request):
+    """FastAPI dependency: ensure the logged-in user is an admin.
+
+    Raises HTTPException(401) (→ redirect to /auth/login) when there is no
+    logged-in user, and HTTPException(403) when the user is authenticated but
+    not an admin. Used to guard society-key creation/editing — only the admin
+    may create or change the single shared Chave da Sociedade.
+    """
+    user_id = request.session.get("user_id")
+    if not user_id:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="Authentication required")
+    if not request.session.get("is_admin"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Apenas o administrador pode gerir a Chave da Sociedade")
+
+
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 

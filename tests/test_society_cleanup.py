@@ -51,10 +51,10 @@ print("PASS: draw created matching society key")
 # Check the draws list — should show ONLY society key win, not test keys
 r = client.get("/sorteios")
 assert r.status_code == 200, f"sorteios failed: {r.status_code}"
-# The draw should show exactly 1 winning key (society), not 3
-import re
-# Look for "1 chave(s)" or similar in the trophy badge
-assert "1 chave" in r.text, f"Expected 1 winning key, got different. Text snippet: {r.text[r.text.find('chave')-50:r.text.find('chave')+50] if 'chave' in r.text else 'no chave'}"
+# The draw should show the society key as "Chave premiada" (singular, 1 key),
+# NOT "3 chaves" (no double-count from the test keys).
+assert "Chave premiada" in r.text, "Expected society key win shown as 'Chave premiada'"
+assert "3 chaves" not in r.text, "Double-count detected: 3 keys shown instead of 1"
 print("PASS: draws list shows only society key win (no double-count)")
 
 # Test cleanup route

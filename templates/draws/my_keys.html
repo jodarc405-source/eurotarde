@@ -73,6 +73,7 @@
         <h5 class="mb-0"><i class="fas fa-key me-2"></i>Criar Chave da Sociedade</h5>
     </div>
     <div class="card-body">
+        {% if request.session.get('is_admin') %}
         <p class="text-muted mb-3" style="font-size: 0.85rem;">
             Ainda não há uma chave definida. Cria a chave partilhada por todos os utilizadores —
             todos veem e pontuam pela mesma chave.
@@ -110,6 +111,13 @@
                 </div>
             </div>
         </form>
+        {% else %}
+        <div class="alert alert-info mb-0">
+            <i class="fas fa-info-circle me-1"></i>
+            A Chave da Sociedade ainda não foi definida. Apenas o
+            <strong>administrador</strong> pode criá-la ou alterá-la.
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endif %}

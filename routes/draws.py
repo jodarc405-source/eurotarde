@@ -6,7 +6,7 @@ from database import get_db
 from services.draw_service import get_draws, get_draw_by_id, get_distinct_years, get_distinct_months
 from services.key_checker import check_key_against_draw, determine_prize
 from services.my_keys_service import get_society_key_results, get_society_key, check_all_my_keys_against_draw, check_society_key_against_draw
-from services.auth_service import require_auth
+from services.auth_service import require_auth, require_admin
 from models.prize import PrizeTier
 
 router = APIRouter()
@@ -30,7 +30,7 @@ async def my_keys_page(request: Request, db: Session = Depends(get_db)):
     })
 
 
-@router.post("/sorteios/my-keys/create")
+@router.post("/sorteios/my-keys/create", dependencies=[Depends(require_admin)])
 async def my_keys_create(
     request: Request,
     n1: int = Form(...), n2: int = Form(...), n3: int = Form(...), n4: int = Form(...), n5: int = Form(...),
@@ -38,10 +38,11 @@ async def my_keys_create(
     label: str = Form("Chave da Sociedade"),
     db: Session = Depends(get_db),
 ):
-    """Create the society key (shared by all users).
+    """Create (or replace) the society key — ADMIN ONLY.
 
-    Any authenticated user may create it when it does not yet exist.
-    The admin can also do this from /admin/society-key.
+    A Chave da Sociedade is the single shared key used for ALL users and for
+    the Sorteios highlight. Only the admin may create or change it. Non-admins
+    attempting this get HTTP 403.
     """
     from services.my_keys_service import create_society_key
     numbers = sorted([n1, n2, n3, n4, n5])
