@@ -3,10 +3,10 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    ***REDACTED***: str = "change-this-secret-key"
+    SECRET_KEY: str = "change-this-secret-key"
     DATABASE_URL: str = "sqlite:///eurotarde.db"
     ADMIN_DEFAULT_USERNAME: str = "admin"
-    ADMIN_DEFAULT_PASSWORD: str = "***REDACTED***"
+    ADMIN_DEFAULT_PASSWORD: str = "change-this-admin-password"
     EUROMILLIONS_API_URL: str = "https://euromillions-api.com/api/v1"
     DRAW_UPDATE_HOUR: int = 0
     DRAW_UPDATE_MINUTE: int = 0

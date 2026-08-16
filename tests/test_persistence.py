@@ -19,7 +19,7 @@ _tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
 DB_PATH = _tmp.name
 _tmp.close()
 os.environ["DATABASE_URL"] = f"sqlite:///{DB_PATH}"
-os.environ["***REDACTED***"] = "test-secret-key-for-persistence"
+os.environ["SECRET_KEY"] = "test-secret-key-for-persistence"
 os.environ["ADMIN_DEFAULT_USERNAME"] = "admin"
 os.environ["ADMIN_DEFAULT_PASSWORD"] = "admin123"
 

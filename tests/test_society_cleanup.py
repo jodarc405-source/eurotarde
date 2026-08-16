@@ -7,12 +7,27 @@ sys.path.insert(0, ".")
 
 db_path = tempfile.mktemp(suffix=".db")
 os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
-os.environ["***REDACTED***"] = "test-secret-key-for-smoke-test"
+os.environ["SECRET_KEY"] = "test-secret-key-for-smoke-test"
 os.environ["ADMIN_DEFAULT_USERNAME"] = "admin"
 os.environ["ADMIN_DEFAULT_PASSWORD"] = "admin123"
 
 from database import init_db, SessionLocal
 init_db()
+
+# --- Isolate this test from the shared conftest SQLite DB (order-independent) ---
+from models.key import Key
+from models.payment import Payment
+from models.prize_pool import PrizePool
+from models.draw import Draw
+from models.user import User
+_rdb = SessionLocal()
+_rdb.query(Key).delete()
+_rdb.query(Payment).delete()
+_rdb.query(PrizePool).delete()
+_rdb.query(Draw).delete()
+_rdb.query(User).filter(User.is_admin == False).delete()
+_rdb.commit()
+_rdb.close()
 
 from fastapi.testclient import TestClient
 import main

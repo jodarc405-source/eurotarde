@@ -16,7 +16,7 @@ def _setup_test_db():
     if "DATABASE_URL" not in os.environ:
         db_path = tempfile.mktemp(suffix=".db")
         os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
-    os.environ.setdefault("***REDACTED***", "test-secret-key-eurotarde")
+    os.environ.setdefault("SECRET_KEY", "test-secret-key-eurotarde")
     os.environ.setdefault("ADMIN_DEFAULT_USERNAME", "admin")
     os.environ.setdefault("ADMIN_DEFAULT_PASSWORD", "admin123")
 
