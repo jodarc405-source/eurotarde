@@ -131,6 +131,15 @@ def init_db():
         Base.metadata.create_all(bind=engine, tables=[Base.metadata.tables["week_payments"]])
         logger.info("Migration: created week_payments table")
 
+    # Migration: add 'caixa' column to prize_pool table if missing (added 2026-08-16)
+    if "prize_pool" in inspector2.get_table_names():
+        prize_pool_cols = [col["name"] for col in inspector2.get_columns("prize_pool")]
+        if "caixa" not in prize_pool_cols:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE prize_pool ADD COLUMN caixa FLOAT DEFAULT 0.26 NOT NULL"))
+                conn.commit()
+            logger.info("Migration: added 'caixa' column to prize_pool table")
+
     db = SessionLocal()
     try:
         # Seed admin user if not exists
