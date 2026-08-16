@@ -5,6 +5,12 @@ from models.payment import Payment
 
 
 def create_payment(db: Session, user_id: int, draw_id: int | None, amount: float, payment_date: date, notes: str | None = None) -> Payment:
+    from config import get_settings
+    from models.week_payment import WeekPayment
+    
+    settings = get_settings()
+    week_value = getattr(settings, 'WEEK_VALUE', 1.0)
+    
     payment = Payment(
         user_id=user_id,
         draw_id=draw_id,
@@ -15,6 +21,39 @@ def create_payment(db: Session, user_id: int, draw_id: int | None, amount: float
     db.add(payment)
     db.commit()
     db.refresh(payment)
+    
+    # If this is a regular payment (not from "gastar prémios"), add green weeks
+    # Only for payments without "Prémio distribuído" in notes
+    if notes is None or "Prémio distribuído" not in notes:
+        # Calculate how many whole weeks this payment covers
+        weeks = int(amount // week_value)
+        if weeks > 0:
+            # Get current paid weeks for this user/year
+            year = payment_date.year
+            paid_weeks = db.query(WeekPayment.week_number).filter(
+                WeekPayment.user_id == user_id,
+                WeekPayment.year == year
+            ).all()
+            paid_week_nums = {w[0] for w in paid_weeks}
+            
+            # Find next unpaid weeks
+            next_weeks = []
+            for w in range(1, 53):
+                if w not in paid_week_nums and len(next_weeks) < weeks:
+                    next_weeks.append(w)
+            
+            # Add WeekPayment entries with source='payment' (green)
+            for week_num in next_weeks:
+                wp = WeekPayment(
+                    user_id=user_id,
+                    week_number=week_num,
+                    year=year,
+                    source="payment"
+                )
+                db.add(wp)
+            
+            db.commit()
+    
     return payment
 
 
@@ -216,6 +255,48 @@ def get_prize_pool(db: Session) -> float:
     return float(pool.available)
 
 
+def get_caixa(db: Session) -> float:
+    """Get the current caixa balance (single-row table)."""
+    from models.prize_pool import PrizePool
+    pool = db.query(PrizePool).order_by(PrizePool.id).first()
+    if pool is None:
+        pool = PrizePool(available=0.0, caixa=0.26)
+        db.add(pool)
+        db.commit()
+        db.refresh(pool)
+    return float(pool.caixa)
+
+
+def add_to_caixa(db: Session, amount: float) -> float:
+    """Add `amount` to the caixa balance."""
+    from models.prize_pool import PrizePool
+    pool = db.query(PrizePool).order_by(PrizePool.id).first()
+    if pool is None:
+        pool = PrizePool(available=0.0, caixa=0.26)
+        db.add(pool)
+        db.commit()
+        db.refresh(pool)
+    pool.caixa = float(pool.caixa) + float(amount)
+    db.commit()
+    db.refresh(pool)
+    return float(pool.caixa)
+
+
+def subtract_from_caixa(db: Session, amount: float) -> float:
+    """Subtract `amount` from the caixa balance."""
+    from models.prize_pool import PrizePool
+    pool = db.query(PrizePool).order_by(PrizePool.id).first()
+    if pool is None:
+        pool = PrizePool(available=0.0, caixa=0.26)
+        db.add(pool)
+        db.commit()
+        db.refresh(pool)
+    pool.caixa = max(0.0, float(pool.caixa) - float(amount))
+    db.commit()
+    db.refresh(pool)
+    return float(pool.caixa)
+
+
 def top_up_prize_pool(db: Session, amount: float) -> float:
     """Add `amount` to the prize pool (e.g. after importing 2026 draws)."""
     from models.prize_pool import PrizePool
@@ -244,58 +325,147 @@ def get_total_society_payouts(db: Session) -> float:
     return round(float(total), 2)
 
 
-def spend_prizes_on_users(db: Session, payment_date=None) -> dict:
-    """Distribute the prize pool as €1 payments to each active non-admin user.
-
-    Spends 1€ per user until the pool is exhausted. Returns a summary dict:
-        {"distributed": float, "remaining": float, "users_paid": int, "per_user": float}
+def spend_prizes_on_users(db: Session, payment_date=None, user_amounts=None) -> dict:
+    """Distribute the caixa balance as payments to selected users (gastar prémios).
+    
+    Args:
+        db: Database session
+        payment_date: Date for the payment (default: today)
+        user_amounts: Dict {user_id: amount} specifying how much to spend per user.
+                      If None, falls back to old behavior (€1 per user from prize pool).
+    
+    Returns a summary dict:
+        {"distributed": float, "remaining_caixa": float, "users_paid": int, "weeks_added": int}
     """
     from datetime import date
     from models.prize_pool import PrizePool
     from models.user import User
-
+    from models.week_payment import WeekPayment
+    from config import get_settings
+    
+    settings = get_settings()
+    week_value = getattr(settings, 'WEEK_VALUE', 1.0)
+    
     if payment_date is None:
         payment_date = date.today()
-
+    
     pool = db.query(PrizePool).order_by(PrizePool.id).first()
     if pool is None:
-        pool = PrizePool(available=0.0)
+        pool = PrizePool(available=0.0, caixa=0.26)
         db.add(pool)
         db.commit()
         db.refresh(pool)
-
+    
+    # If user_amounts provided, use caixa; otherwise fall back to old behavior
+    if user_amounts is not None:
+        # New behavior: use caixa balance
+        available_caixa = float(pool.caixa)
+        if available_caixa <= 0:
+            return {"distributed": 0.0, "remaining_caixa": 0.0, "users_paid": 0, "weeks_added": 0}
+        
+        # Validate user amounts and check against caixa balance
+        total_requested = sum(user_amounts.values())
+        if total_requested > available_caixa:
+            # Not enough in caixa - scale down proportionally or reject
+            # We'll reject and let the UI handle it
+            return {"distributed": 0.0, "remaining_caixa": available_caixa, "users_paid": 0, "weeks_added": 0, "error": "Saldo insuficiente na Caixa"}
+        
+        # Get active non-admin users that have amounts specified
+        user_ids = list(user_amounts.keys())
+        users = db.query(User).filter(
+            User.id.in_(user_ids),
+            User.is_admin == False,
+            User.is_active == True
+        ).all()
+        
+        if not users:
+            return {"distributed": 0.0, "remaining_caixa": available_caixa, "users_paid": 0, "weeks_added": 0}
+        
+        distributed = 0.0
+        weeks_added = 0
+        
+        for user in users:
+            amount = user_amounts.get(user.id, 0)
+            if amount <= 0:
+                continue
+            
+            # Create payment record
+            create_payment(db, user.id, None, amount, payment_date,
+                          "Prémio distribuído (gastar prémios)")
+            
+            # Calculate how many weeks this covers (whole weeks only)
+            weeks = int(amount // week_value)
+            if weeks > 0:
+                # Find the next unpaid weeks for this user and mark them as 'prize' (orange)
+                # Get current paid weeks
+                paid_weeks = db.query(WeekPayment.week_number).filter(
+                    WeekPayment.user_id == user.id,
+                    WeekPayment.year == payment_date.year
+                ).all()
+                paid_week_nums = {w[0] for w in paid_weeks}
+                
+                # Find next unpaid weeks
+                next_weeks = []
+                for w in range(1, 53):
+                    if w not in paid_week_nums and len(next_weeks) < weeks:
+                        next_weeks.append(w)
+                
+                # Add WeekPayment entries with source='prize' (orange)
+                for week_num in next_weeks:
+                    wp = WeekPayment(
+                        user_id=user.id,
+                        week_number=week_num,
+                        year=payment_date.year,
+                        source="prize"
+                    )
+                    db.add(wp)
+                    weeks_added += 1
+            
+            distributed += amount
+        
+        # Subtract from caixa
+        pool.caixa = max(0.0, float(pool.caixa) - distributed)
+        db.commit()
+        db.refresh(pool)
+        
+        return {
+            "distributed": round(distributed, 2),
+            "remaining_caixa": round(float(pool.caixa), 2),
+            "users_paid": len([u for u in users if user_amounts.get(u.id, 0) > 0]),
+            "weeks_added": weeks_added,
+        }
+    
+    # Old behavior (fallback): distribute from prize pool, €1 per user
     available = float(pool.available)
     if available <= 0:
-        return {"distributed": 0.0, "remaining": 0.0, "users_paid": 0, "per_user": 0.0}
-
+        return {"distributed": 0.0, "remaining_caixa": float(pool.caixa), "users_paid": 0, "weeks_added": 0}
+    
     # Active, non-admin users
     users = db.query(User).filter(User.is_admin == False, User.is_active == True).all()
     if not users:
-        return {"distributed": 0.0, "remaining": available, "users_paid": 0, "per_user": 0.0}
-
+        return {"distributed": 0.0, "remaining_caixa": float(pool.caixa), "users_paid": 0, "weeks_added": 0}
+    
     n_users = len(users)
-    # Each user gets 1€ while there's enough; remainder stays in pool
     per_user = int(available) // n_users  # whole euros per user
     if per_user < 1:
-        # Not enough for a full €1 per user — give 1€ to as many as possible
         users_paid = int(available)
         per_user = 1
     else:
         users_paid = n_users
-
+    
     distributed = 0.0
     for u in users[:users_paid]:
         create_payment(db, u.id, None, float(per_user), payment_date,
                        "Prémio distribuído (gastar prémios)")
         distributed += float(per_user)
-
+    
     pool.available = available - distributed
     db.commit()
     db.refresh(pool)
-
+    
     return {
         "distributed": round(distributed, 2),
-        "remaining": round(float(pool.available), 2),
+        "remaining_caixa": round(float(pool.caixa), 2),
         "users_paid": users_paid,
-        "per_user": float(per_user),
+        "weeks_added": 0,
     }

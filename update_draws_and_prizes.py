@@ -59,7 +59,12 @@ def main():
         # 3) Recompute society-key prizes against every draw
         if get_society_key(db):
             for dr in get_all_draws(db):
-                check_society_key_against_draw(db, dr.id)
+                results = check_society_key_against_draw(db, dr.id)
+                if results:
+                    # Society key won a prize in this draw - add 0.26€ to caixa
+                    from services.payment_service import add_to_caixa
+                    add_to_caixa(db, 0.26)
+                    logger.info(f"  + caixa: added 0.26€ for draw {dr.draw_date} (prize won)")
             logger.info("Society-key prizes recomputed.")
         else:
             logger.info("No society key set — skipping recompute.")

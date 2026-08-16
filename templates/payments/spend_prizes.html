@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Gastar Prémios - Eurotarde{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-gift me-2"></i>Gastar Prémios</h2>
+
+<!-- Caixa Balance Card -->
+<div class="card shadow mb-4" style="border-color: rgba(13,202,240,0.3) !important;">
+    <div class="card-header" style="background: rgba(13,202,240,0.1) !important;">
+        <h5 class="mb-0" style="color: var(--info);">
+            <i class="fas fa-box me-2"></i>Caixa Disponível
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="p-4 rounded text-center" style="background: var(--bg-glass);">
+                    <h2 class="text-info" style="font-weight: 800;">{{ '{:,.2f}'.format(caixa) }}€</h2>
+                    <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Saldo na Caixa</small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-4 rounded text-center" style="background: var(--bg-glass);">
+                    <h2 class="text-warning" style="font-weight: 800;">{{ '{:,.2f}'.format(total_prizes_2026) }}€</h2>
+                    <small class="text-muted" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Prémios 2026 (Sociedade)</small>
+                </div>
+            </div>
+        </div>
+        {% if users %}
+        <div class="row mt-3">
+            <div class="col-12">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    <strong>Sugestão:</strong> {{ '{:,.2f}'.format(caixa / users|length) }}€ por utilizador 
+                    ({{ users|length }} utilizadores ativos). 
+                    O valor introduzido será subtraído da Caixa.
+                </small>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Distribute Form -->
+{% if users %}
+<form method="POST" action="/pagamentos/spend-prizes" id="spendPrizesForm">
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-users me-2"></i>Distribuir Prémios por Utilizador</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40%;">Utilizador</th>
+                            <th style="width: 30%;">Valor a Gastar (€)</th>
+                            <th style="width: 30%;">Semanas que vão ficar a laranja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                <strong>{{ user.username }}</strong>
+                                {% if user.is_admin %}
+                                <span class="badge bg-danger ms-2">Admin</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <input type="number" 
+                                       name="amount_{{ user.id }}" 
+                                       id="amount_{{ user.id }}"
+                                       class="form-control form-control-sm amount-input"
+                                       step="0.01" 
+                                       min="0" 
+                                       value="{{ '{:,.2f}'.format(caixa / users|length) if loop.first else '0' }}"
+                                       {% if user.is_admin %}disabled{% endif %}
+                                       data-week-value="{{ week_value }}">
+                            </td>
+                            <td>
+                                <span id="weeks_{{ user.id }}" class="text-muted small">0 semanas</span>
+                                <input type="hidden" name="weeks_{{ user.id }}" id="weeks_hidden_{{ user.id }}" value="0">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="alert alert-info mt-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Total a gastar:</strong> <span id="totalToSpend">{{ '{:,.2f}'.format(caixa) }}€</span>
+                    </div>
+                    <div>
+                        <strong>Restará na Caixa:</strong> <span id="remainingCaixa" class="text-success fw-bold">0.00€</span>
+                    </div>
+                </div>
+                <div class="progress mt-2" style="height: 8px;">
+                    <div class="progress-bar bg-info" id="caixaProgress" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <small class="text-muted">O total não pode exceder o saldo da Caixa ({{ '{:,.2f}'.format(caixa) }}€)</small>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning" id="submitBtn" {% if caixa <= 0 %}disabled{% endif %}>
+                    <i class="fas fa-gift me-1"></i>Confirmar Gastar Prémios
+                </button>
+                <a href="/pagamentos" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</form>
+{% else %}
+<div class="card shadow">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-users-slash fa-3x mb-3" style="color: var(--text-muted); opacity: 0.3;"></i>
+        <h5 class="text-muted">Nenhum utilizador ativo encontrado</h5>
+        <a href="/pagamentos" class="btn btn-secondary mt-3">Voltar aos Pagamentos</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Week value per week (from template context)
+const WEEK_VALUE = {{ week_value }};
+const CAIXA_BALANCE = {{ caixa }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const amountInputs = document.querySelectorAll('.amount-input');
+    const totalToSpendEl = document.getElementById('totalToSpend');
+    const remainingCaixaEl = document.getElementById('remainingCaixa');
+    const caixaProgressEl = document.getElementById('caixaProgress');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    function updateCalculations() {
+        let total = 0;
+        
+        amountInputs.forEach(input => {
+            const userId = input.id.replace('amount_', '');
+            const amount = parseFloat(input.value) || 0;
+            const weeksEl = document.getElementById('weeks_' + userId);
+            const weeksHiddenEl = document.getElementById('weeks_hidden_' + userId);
+            
+            // Calculate weeks (rounded down to whole weeks)
+            const weeks = Math.floor(amount / WEEK_VALUE);
+            weeksHiddenEl.value = weeks;
+            
+            if (weeks > 0) {
+                weeksEl.textContent = weeks + ' semana' + (weeks !== 1 ? 's' : '');
+                weeksEl.className = 'text-warning fw-bold small';
+            } else {
+                weeksEl.textContent = '0 semanas';
+                weeksEl.className = 'text-muted small';
+            }
+            
+            total += amount;
+        });
+        
+        const remaining = CAIXA_BALANCE - total;
+        const percentage = CAIXA_BALANCE > 0 ? (total / CAIXA_BALANCE) * 100 : 0;
+        
+        totalToSpendEl.textContent = total.toFixed(2) + '€';
+        remainingCaixaEl.textContent = Math.max(0, remaining).toFixed(2) + '€';
+        caixaProgressEl.style.width = Math.min(100, percentage) + '%';
+        caixaProgressEl.setAttribute('aria-valuenow', Math.min(100, Math.round(percentage)));
+        
+        // Color coding
+        if (remaining < 0) {
+            remainingCaixaEl.className = 'text-danger fw-bold';
+            caixaProgressEl.className = 'progress-bar bg-danger';
+            submitBtn.disabled = true;
+        } else {
+            remainingCaixaEl.className = 'text-success fw-bold';
+            caixaProgressEl.className = 'progress-bar bg-info';
+            submitBtn.disabled = false;
+        }
+    }
+    
+    amountInputs.forEach(input => {
+        input.addEventListener('input', updateCalculations);
+        input.addEventListener('change', updateCalculations);
+    });
+    
+    // Initial calculation
+    updateCalculations();
+});
+</script>
+{% endblock %}

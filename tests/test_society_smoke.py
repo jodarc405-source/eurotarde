@@ -87,16 +87,32 @@ print("PASS: spend-prizes with empty pool = no crash")
 
 # 7. Test spend-prizes with a pool of 6€ (5 users -> 5€ distributed, 1€ remaining)
 db = SessionLocal()
-from services.payment_service import top_up_prize_pool
+from services.payment_service import top_up_prize_pool, add_to_caixa
 top_up_prize_pool(db, 6.0)
+# Also add to caixa for new behavior
+add_to_caixa(db, 6.0)
+# Get the actual non-admin user IDs
+from models.user import User
+non_admin_users = db.query(User).filter(User.is_admin == False, User.is_active == True).all()
+user_ids = [u.id for u in non_admin_users]
+print(f"Non-admin user IDs: {user_ids}")
 db.close()
 
-r = client.post("/pagamentos/spend-prizes", follow_redirects=False)
+# Test the new spend-prizes page first
+r = client.get("/pagamentos/spend-prizes")
+assert r.status_code == 200, f"spend-prizes page failed: {r.status_code}"
+print("PASS: spend-prizes page renders")
+
+# Test spend-prizes POST with form data (1€ per user = 5€ total)
+form_data = {}
+for uid in user_ids:
+    form_data[f"amount_{uid}"] = "1.00"
+r = client.post("/pagamentos/spend-prizes", data=form_data, follow_redirects=False)
 assert r.status_code == 302, f"spend-prizes POST failed: {r.status_code}"
 print("PASS: spend-prizes POST ok")
 
 db = SessionLocal()
-# Re-check: pool should have 1€ left, 5 payments of 1€ created
+# Re-check: caixa should have 1.26€ left (6 - 5 + 0.26 initial), 5 payments of 1€ created
 from models.payment import Payment
 from models.prize_pool import PrizePool
 payments = db.query(Payment).filter(Payment.notes.like("Prémio distribuído%")).all()
@@ -106,8 +122,9 @@ db.close()
 
 assert len(payments) == 5, f"expected 5 payments, got {len(payments)}"
 assert abs(total_payout - 5.0) < 0.01, f"expected 5€ total payout, got {total_payout}"
-assert abs(pool.available - 1.0) < 0.01, f"expected 1€ remaining, got {pool.available}"
-print(f"PASS: 6€ pool -> 5€ distributed (1€/user x5), 1€ remaining")
+# Check caixa (new behavior): 6.0 + 0.26 initial - 5.0 = 1.26
+assert abs(pool.caixa - 1.26) < 0.01, f"expected 1.26€ remaining in caixa, got {pool.caixa}"
+print(f"PASS: 6€ caixa -> 5€ distributed (1€/user x5), 1.26€ remaining in caixa")
 
 # 8. Verify 'prémio utilizado' sum
 db = SessionLocal()

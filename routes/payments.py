@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from database import get_db
 from services.payment_service import (
     create_payment, get_payments, get_payment_by_id,
-    update_payment, delete_payment, get_all_payments
+    update_payment, delete_payment, get_all_payments,
+    spend_prizes_on_users, get_caixa
 )
 from services.auth_service import get_all_users
 from services.draw_service import get_all_draws
@@ -85,13 +86,54 @@ async def delete_payment_route(payment_id: int, request: Request, db: Session = 
     return RedirectResponse(url="/pagamentos", status_code=302)
 
 
+@router.get("/pagamentos/spend-prizes", response_class=HTMLResponse)
+async def spend_prizes_page(request: Request, db: Session = Depends(get_db)):
+    """Show the 'Gastar Prémios' page with user selection and amounts."""
+    from models.user import User
+    from services.payment_service import get_caixa
+    from config import get_settings
+    
+    users = db.query(User).filter(User.is_admin == False, User.is_active == True).all()
+    caixa = get_caixa(db)
+    settings = get_settings()
+    week_value = getattr(settings, 'WEEK_VALUE', 1.0)
+    
+    return request.app.state.templates.TemplateResponse("payments/spend_prizes.html", {
+        "request": request,
+        "users": users,
+        "caixa": caixa,
+        "total_prizes_2026": 0.0,  # Could fetch if needed
+        "week_value": week_value,
+    })
+
+
 @router.post("/pagamentos/spend-prizes")
 async def spend_prizes_route(request: Request, db: Session = Depends(get_db)):
-    """Distribute available prize pool as €1 payments to each user (gastar prémios)."""
+    """Distribute available caixa as payments to selected users (gastar prémios)."""
     from services.payment_service import spend_prizes_on_users
-    result = spend_prizes_on_users(db)
+    import json
+    
+    # Get form data
+    form_data = await request.form()
+    
+    # Extract amounts per user
+    user_amounts = {}
+    for key, value in form_data.items():
+        if key.startswith('amount_'):
+            user_id = int(key.replace('amount_', ''))
+            amount = float(value) if value else 0
+            if amount > 0:
+                user_amounts[user_id] = amount
+    
+    if not user_amounts:
+        flash(request, "Nenhum valor foi inserido para nenhum utilizador.", "warning")
+        return RedirectResponse(url="/pagamentos/spend-prizes", status_code=302)
+    
+    # Call the updated spend_prizes_on_users with user_amounts
+    result = spend_prizes_on_users(db, user_amounts=user_amounts)
+    
     if result["distributed"] > 0:
-        flash(request, f"Prémios distribuídos: {result['distributed']}€ para {result['users_paid']} utilizador(es). Restante no fundo: {result['remaining']}€", "success")
+        flash(request, f"Prémios distribuídos: {result['distributed']}€ para {result['users_paid']} utilizador(es). Restante na Caixa: {result['remaining_caixa']}€", "success")
     else:
-        flash(request, "Não há prémios disponíveis para distribuir.", "info")
+        flash(request, "Não foi possível distribuir prémios (saldo insuficiente na Caixa).", "info")
     return RedirectResponse(url="/pagamentos", status_code=302)

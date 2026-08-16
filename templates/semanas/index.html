@@ -3,10 +3,36 @@
 {% block content %}
 <h2 class="page-title"><i class="fas fa-calendar-week"></i> Semanas 2026</h2>
 
-<p class="text-muted mb-4">
-    Cada semana custa <strong style="color: var(--accent-light);">1 &euro;</strong>.
-    As semanas são contadas de 1 de janeiro a 31 de dezembro de 2026.
-</p>
+<!-- Week Value Configuration Card -->
+<div class="card shadow mb-4" style="border-color: rgba(13,202,240,0.3) !important;">
+    <div class="card-header" style="background: rgba(13,202,240,0.1) !important;">
+        <h5 class="mb-0" style="color: var(--info);">
+            <i class="fas fa-euro-sign me-2"></i>Valor por Semana
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="/semanas/update-week-value" class="d-flex gap-3 align-items-end flex-wrap">
+            <div>
+                <label for="week_value" class="form-label small fw-bold">Valor de cada semana (€)</label>
+                <input type="number" 
+                       name="week_value" 
+                       id="week_value" 
+                       class="form-control form-control-sm" 
+                       step="0.01" 
+                       min="0.01" 
+                       value="{{ week_value }}"
+                       style="width: 120px;">
+            </div>
+            <button type="submit" class="btn btn-info btn-sm">
+                <i class="fas fa-save me-1"></i>Guardar Valor
+            </button>
+            <span class="text-muted small align-self-center">
+                Cada semana custa <strong>{{ '{:,.2f}'.format(week_value) }}€</strong>. 
+                As semanas são contadas de 1 de janeiro a 31 de dezembro de {{ current_year }}.
+            </span>
+        </form>
+    </div>
+</div>
 
 {% if weeks_data %}
 {% for uw in weeks_data %}

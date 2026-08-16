@@ -42,8 +42,9 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
 
     # Prémio utilizado = soma dos pagamentos de 1€ (gastar prémios) dividido
     # pelos utilizadores (cada utilizador recebe 1€ por ação de "gastar prémios").
-    from services.payment_service import get_total_society_payouts
+    from services.payment_service import get_total_society_payouts, get_caixa
     premio_utilizado = get_total_society_payouts(db)
+    caixa = get_caixa(db)
 
     # Analytics — only for admin
     analytics = None
@@ -66,6 +67,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
         "draws": draws,
         "total_prizes_2026": float(total_prizes_2026),
         "premio_utilizado": float(premio_utilizado),
+        "caixa": float(caixa),
         "analytics": analytics,
         "all_results": all_results,
         "total_wins": total_wins,

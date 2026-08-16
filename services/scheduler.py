@@ -50,7 +50,11 @@ def import_recent_draws():
                     )
                     added += 1
                     # Check society key against the new draw only (no double-counting)
-                    check_society_key_against_draw(db, new_draw.id)
+                    results = check_society_key_against_draw(db, new_draw.id)
+                    if results:
+                        from services.payment_service import add_to_caixa
+                        add_to_caixa(db, 0.26)
+                        logger.info(f"  + caixa: added 0.26€ for draw {draw_date} (prize won)")
             logger.info(f"Import complete: {added} new draws added.")
         finally:
             db.close()
@@ -99,7 +103,11 @@ def update_draws():
                         prizes=prizes,
                     )
                     logger.info(f"New draw added for {draw_date}")
-                    check_society_key_against_draw(db, new_draw.id)
+                    results = check_society_key_against_draw(db, new_draw.id)
+                    if results:
+                        from services.payment_service import add_to_caixa
+                        add_to_caixa(db, 0.26)
+                        logger.info(f"  + caixa: added 0.26€ for draw {draw_date} (prize won)")
                 else:
                     logger.info(f"Draw for {draw_date} already exists, skipping.")
             finally:

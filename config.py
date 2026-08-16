@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     DRAW_UPDATE_HOUR: int = 0
     DRAW_UPDATE_MINUTE: int = 0
     SESSION_MAX_AGE: int = 3600
+    WEEK_VALUE: float = 1.0  # Valor de cada semana em € (padrão 1.00€)
 
     class Config:
         env_file = ".env"
