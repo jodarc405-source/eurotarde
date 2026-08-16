@@ -126,6 +126,11 @@ def init_db():
         Base.metadata.create_all(bind=engine, tables=[Base.metadata.tables["draw_prizes"]])
         logger.info("Migration: created draw_prizes table")
 
+    # Migration: create week_payments table if missing (paid-week tracking + source color)
+    if "week_payments" not in inspector2.get_table_names():
+        Base.metadata.create_all(bind=engine, tables=[Base.metadata.tables["week_payments"]])
+        logger.info("Migration: created week_payments table")
+
     db = SessionLocal()
     try:
         # Seed admin user if not exists

@@ -57,62 +57,100 @@ def update_payment(db: Session, payment_id: int, amount: float | None = None, pa
     return payment
 
 
-def get_user_weeks_paid(db: Session, user_id: int) -> list[dict]:
-    """Get 52 weeks for a user, marking which are paid.
+def get_user_weeks_paid(db: Session, user_id: int, year: int | None = None) -> list[dict]:
+    """Get 52 weeks for a user, with per-week paid status AND source color.
 
-    Each week costs €1. Payments accumulate and extend the paid period.
-    Additionally, all weeks up to the CURRENT week of 2026 are forced to
-    'paid' (objective: "colocar todos os utilizadores pagos até à semana corrente").
-    Returns a list of 52 week dicts with: week_number, date_start, date_end, paid, month
+    Sources of "paid":
+      - Weeks up to the CURRENT week are auto-marked paid (green) — the user is
+        assumed to be up to date.
+      - Explicit WeekPayment rows (from payments or "gastar prémios") set the
+        exact week + source ('payment' = green, 'prize' = orange).
+
+    Returns a list of 52 week dicts with: week_number, date_start, date_end,
+    paid (bool), source ('payment'|'prize'|None), current, month, month_num.
     """
     from datetime import date, timedelta
-    from sqlalchemy import func
-    from models.payment import Payment
+    from models.week_payment import WeekPayment
+
+    if year is None:
+        year = date.today().year
 
     MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
                    "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
-    # Get total amount paid by this user (each €1 = 1 week of quota credit)
-    total_paid = db.query(func.sum(Payment.amount)).filter(
-        Payment.user_id == user_id
-    ).scalar() or 0.0
-    weeks_credit = int(total_paid)  # weeks of quota paid ahead
+    # Explicit paid weeks from the week_payments table
+    rows = db.query(WeekPayment).filter(
+        WeekPayment.user_id == user_id,
+        WeekPayment.year == year,
+    ).all()
+    paid_map = {r.week_number: r.source for r in rows}
 
-    # Start from the beginning of the current year
     today = date.today()
-    year_start = date(today.year, 1, 1)
-
-    # Current week of the year (ISO)
+    year_start = date(year, 1, 1)
     current_week = int(today.strftime("%V"))
-
-    # Find Monday of week 1
     monday = year_start - timedelta(days=year_start.weekday())
-
-    # A user is "em dia" up to the current week (assumed paid), and any
-    # payments extend the paid period weeks_credit weeks BEYOND the current week.
-    # So the last paid week = current_week + weeks_credit (capped at 52).
-    last_paid_week = min(52, current_week + weeks_credit)
 
     weeks = []
     for i in range(52):
         week_num = i + 1
         week_start = monday + timedelta(weeks=i)
         week_end = week_start + timedelta(days=6)
-        # Determine the month this week belongs to (by the Wednesday of the week)
         wednesday = week_start + timedelta(days=2)
         month_name = MONTH_NAMES[wednesday.month - 1]
-        paid = week_num <= last_paid_week
+        # Auto-paid up to current week (green, no explicit source)
+        if week_num in paid_map:
+            paid = True
+            source = paid_map[week_num]
+        elif week_num <= current_week:
+            paid = True
+            source = "payment"  # assumed up-to-date = green
+        else:
+            paid = False
+            source = None
         weeks.append({
             "week_number": week_num,
             "date_start": week_start.strftime("%d/%m"),
             "date_end": week_end.strftime("%d/%m"),
             "paid": paid,
+            "source": source,
             "current": week_start <= today <= week_end,
             "month": month_name,
             "month_num": wednesday.month,
         })
 
     return weeks
+
+
+def set_user_weeks_source(db: Session, user_id: int, start_week: int, count: int,
+                          source: str, year: int | None = None) -> int:
+    """Mark `count` weeks starting at `start_week` for a user with a given source.
+
+    Returns the number of weeks actually written. Conflicts (a week already
+    marked) keep the existing source unless it was the auto 'current-week' green.
+    """
+    from models.week_payment import WeekPayment
+    if year is None:
+        from datetime import date
+        year = date.today().year
+    written = 0
+    for w in range(start_week, start_week + count):
+        if w < 1 or w > 52:
+            continue
+        existing = db.query(WeekPayment).filter(
+            WeekPayment.user_id == user_id,
+            WeekPayment.week_number == w,
+            WeekPayment.year == year,
+        ).first()
+        if existing:
+            # Override only if not already explicitly set (avoid clobbering)
+            if existing.source != source:
+                existing.source = source
+                written += 1
+        else:
+            db.add(WeekPayment(user_id=user_id, week_number=w, year=year, source=source))
+            written += 1
+    db.commit()
+    return written
 
 
 def get_all_users_weeks(db: Session) -> list[dict]:

@@ -32,8 +32,14 @@
             <div class="d-flex flex-wrap gap-1">
                 {% for w in uw.weeks %}
                     {% if w.month == mg.name %}
-                    <div class="week-cell {% if w.paid and w.current %}week-current-paid{% elif w.paid %}week-paid{% elif w.current %}week-current-unpaid{% else %}week-unpaid{% endif %}"
-                         title="Semana {{ w.week_number }}: {{ w.date_start }} a {{ w.date_end }} — {% if w.paid %}Pago{% else %}Por pagar{% endif %}">
+                    {% set cls = 'week-unpaid' %}
+                    {% if w.paid %}
+                        {% if w.source == 'prize' %}{% set cls = 'week-prize' %}
+                        {% elif w.current %}{% set cls = 'week-current-paid' %}
+                        {% else %}{% set cls = 'week-paid' %}{% endif %}
+                    {% elif w.current %}{% set cls = 'week-current-unpaid' %}{% endif %}
+                    <div class="week-cell {{ cls }}"
+                         title="Semana {{ w.week_number }}: {{ w.date_start }} a {{ w.date_end }} — {% if w.paid %}Pago{% if w.source == 'prize' %} (prémio){% endif %}{% else %}Por pagar{% endif %}">
                         {{ w.week_number }}
                     </div>
                     {% endif %}
@@ -52,7 +58,11 @@
         <div class="d-flex flex-wrap gap-4" style="font-size: 0.82rem;">
             <span class="d-flex align-items-center gap-2">
                 <span class="week-cell week-paid" style="width:22px;height:22px;display:inline-flex; font-size:0.55rem;"></span>
-                <span style="color: var(--text-secondary);">Pago</span>
+                <span style="color: var(--text-secondary);">Pago (pagamento)</span>
+            </span>
+            <span class="d-flex align-items-center gap-2">
+                <span class="week-cell week-prize" style="width:22px;height:22px;display:inline-flex; font-size:0.55rem;"></span>
+                <span style="color: var(--text-secondary);">Pago (prémio)</span>
             </span>
             <span class="d-flex align-items-center gap-2">
                 <span class="week-cell week-unpaid" style="width:22px;height:22px;display:inline-flex; font-size:0.55rem;"></span>

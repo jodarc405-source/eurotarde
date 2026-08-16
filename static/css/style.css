@@ -651,6 +651,13 @@ main {
     box-shadow: 0 2px 6px rgba(16,185,129,0.3);
 }
 
+/* Weeks paid via "gastar prémios" (orange) */
+.week-prize {
+    background: linear-gradient(135deg, #f97316, #ea580c) !important;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(249,115,22,0.35);
+}
+
 .week-unpaid {
     background: var(--bg-glass);
     color: var(--text-muted);

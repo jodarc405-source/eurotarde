@@ -23,6 +23,7 @@ class User(Base):
     # the parent (user) is deleted, without the orphan-deletion risk.
     keys = relationship("Key", back_populates="user", cascade="all")
     payments = relationship("Payment", back_populates="user", cascade="all")
+    week_payments = relationship("WeekPayment", back_populates="user", cascade="all")
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', is_admin={self.is_admin})>"
