@@ -5,11 +5,14 @@ e re-insere. IMPORTANTE: a logica de semanas NAO auto-marca semanas ate a
 atual como pagas — so o que esta aqui gravado aparece pago.
 
 Regras finais (2026-08-16):
-  Adérito(3): verde 1-14, laranja 15-23   (24-52 cinzento)
-  Helder(4):  verde 1-19, laranja 20-28   (29-52 cinzento)
-  Hugo(5):    verde 1-12, laranja 13-21    (22-52 cinzento)
-  João(6):    verde 1-15, laranja 16-24    (25-52 cinzento)
-  Miguel(2):  verde 1-14, laranja 15-24, verde 25-52
+  Miguel(2):    verde 1-14 + 25-52, laranja 15-24
+  Adérito(3):   verde 1-14, laranja 15-23   (24-52 cinzento)
+  Helder(4):    verde 1-19, laranja 20-28   (29-52 cinzento)
+  Hugo(5):      verde 1-12, laranja 13-21   (22-52 cinzento)
+  João(6):      verde 1-15, laranja 16-24   (25-52 cinzento)
+
+Regra geral: a partir do inicio das laranjas, apagar verdes ate semana 33
+(exceto Miguel que tem verdes ate a 52).
 """
 import os, sys
 from datetime import date
