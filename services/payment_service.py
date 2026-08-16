@@ -97,23 +97,24 @@ def get_user_weeks_paid(db: Session, user_id: int, year: int | None = None) -> l
         week_end = week_start + timedelta(days=6)
         wednesday = week_start + timedelta(days=2)
         month_name = MONTH_NAMES[wednesday.month - 1]
-        # Auto-paid up to current week (green, no explicit source)
+        # Only explicit WeekPayment rows mark a week paid (green/prize).
+        # No auto "up to current week" — every paid week is stored explicitly.
         if week_num in paid_map:
             paid = True
             source = paid_map[week_num]
-        elif week_num <= current_week:
-            paid = True
-            source = "payment"  # assumed up-to-date = green
         else:
             paid = False
             source = None
+        is_current = week_start <= today <= week_end
+        # current week gets a subtle highlight even if unpaid
+        cls_current = is_current
         weeks.append({
             "week_number": week_num,
             "date_start": week_start.strftime("%d/%m"),
             "date_end": week_end.strftime("%d/%m"),
             "paid": paid,
             "source": source,
-            "current": week_start <= today <= week_end,
+            "current": cls_current,
             "month": month_name,
             "month_num": wednesday.month,
         })
