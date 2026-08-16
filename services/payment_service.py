@@ -72,13 +72,11 @@ def get_user_weeks_paid(db: Session, user_id: int) -> list[dict]:
     MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
                    "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
-    # Get total amount paid by this user
+    # Get total amount paid by this user (each €1 = 1 week of quota credit)
     total_paid = db.query(func.sum(Payment.amount)).filter(
         Payment.user_id == user_id
     ).scalar() or 0.0
-
-    # Each €1 = 1 week paid
-    weeks_paid = int(total_paid)
+    weeks_credit = int(total_paid)  # weeks of quota paid ahead
 
     # Start from the beginning of the current year
     today = date.today()
@@ -90,6 +88,11 @@ def get_user_weeks_paid(db: Session, user_id: int) -> list[dict]:
     # Find Monday of week 1
     monday = year_start - timedelta(days=year_start.weekday())
 
+    # A user is "em dia" up to the current week (assumed paid), and any
+    # payments extend the paid period weeks_credit weeks BEYOND the current week.
+    # So the last paid week = current_week + weeks_credit (capped at 52).
+    last_paid_week = min(52, current_week + weeks_credit)
+
     weeks = []
     for i in range(52):
         week_num = i + 1
@@ -98,8 +101,7 @@ def get_user_weeks_paid(db: Session, user_id: int) -> list[dict]:
         # Determine the month this week belongs to (by the Wednesday of the week)
         wednesday = week_start + timedelta(days=2)
         month_name = MONTH_NAMES[wednesday.month - 1]
-        # Paid if: explicit payment covers it OR it's at/before the current week
-        paid = (week_num <= weeks_paid) or (week_num <= current_week)
+        paid = week_num <= last_paid_week
         weeks.append({
             "week_number": week_num,
             "date_start": week_start.strftime("%d/%m"),
