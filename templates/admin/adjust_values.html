@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Ajustar Valores (Admin) - Eurotarde{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4"><i class="fas fa-sliders-h me-2"></i>Ajustar Caixa / Prémio Utilizado</h2>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Endpoint temporário</strong> — Remove depois de usar (routes/admin.py + templates/admin/adjust_values.html)
+            </div>
+
+            <form method="POST" action="/admin/adjust-values" class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0">Valores Atuais</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <label for="caixa" class="col-sm-3 col-form-label fw-bold">Caixa (€)</label>
+                        <div class="col-sm-9">
+                            <input type="number" 
+                                   name="caixa" 
+                                   id="caixa" 
+                                   class="form-control" 
+                                   step="0.01" 
+                                   value="{{ '{:,.2f}'.format(caixa) }}">
+                            <div class="form-text">Pode ser negativo se necessário</div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="premio_utilizado" class="col-sm-3 col-form-label fw-bold">Prémio Utilizado (€)</label>
+                        <div class="col-sm-9">
+                            <input type="number" 
+                                   name="premio_utilizado" 
+                                   id="premio_utilizado" 
+                                   class="form-control" 
+                                   step="0.01" 
+                                   value="{{ '{:,.2f}'.format(premio_utilizado) }}">
+                            <div class="form-text">Total distribuído como 'Prémio distribuído'. Será dividido igualmente entre {{ users|length if users else 'N/A' }} utilizadores ativos.</div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Guardar Alterações
+                        </button>
+                        <a href="/admin/users" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

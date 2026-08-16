@@ -3,6 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from database import get_db
 from services.auth_service import get_all_users, update_user_password, get_user_by_id, create_user, hash_password
 from services.draw_service import create_draw, get_draw_by_date, get_all_draws, delete_draw
@@ -10,9 +11,70 @@ from services.euromillions_api import fetch_all_draws_last_n_months, fetch_lates
 from models.prize import PrizeTier
 from models.user import User
 from models.draw import Draw
+from models.prize_pool import PrizePool
+from models.payment import Payment
 from services.flash_service import flash
 
 router = APIRouter()
+
+
+# ===== TEMPORARY: Admin route to adjust caixa/premio values (remove after use) =====
+@router.get("/admin/adjust-values", response_class=HTMLResponse)
+async def adjust_values_page(request: Request, db: Session = Depends(get_db)):
+    pool = db.query(PrizePool).order_by(PrizePool.id).first()
+    if not pool:
+        pool = PrizePool(available=0.0, caixa=0.26)
+        db.add(pool)
+        db.commit()
+        db.refresh(pool)
+    premio_utilizado = db.query(func.sum(Payment.amount)).filter(
+        Payment.notes.like("Prémio distribuído%")
+    ).scalar() or 0.0
+    return request.app.state.templates.TemplateResponse("admin/adjust_values.html", {
+        "request": request,
+        "caixa": float(pool.caixa),
+        "premio_utilizado": round(float(premio_utilizado), 2),
+    })
+
+
+@router.post("/admin/adjust-values")
+async def adjust_values_submit(
+    request: Request,
+    caixa: float = Form(...),
+    premio_utilizado: float = Form(...),
+    db: Session = Depends(get_db),
+):
+    # Update caixa
+    pool = db.query(PrizePool).order_by(PrizePool.id).first()
+    if not pool:
+        pool = PrizePool(available=0.0, caixa=caixa)
+        db.add(pool)
+    else:
+        pool.caixa = caixa
+    db.commit()
+
+    # Update premio_utilizado by adding/removing "Prémio distribuído" payments
+    # Delete existing "Prémio distribuído" payments
+    db.query(Payment).filter(Payment.notes.like("Prémio distribuído%")).delete()
+    
+    # Add new payments to reach target premio_utilizado
+    if premio_utilizado > 0:
+        from models.user import User
+        users = db.query(User).filter(User.is_admin == False, User.is_active == True).all()
+        if users:
+            per_user = premio_utilizado / len(users)
+            for u in users:
+                p = Payment(
+                    user_id=u.id,
+                    amount=per_user,
+                    payment_date=date.today(),
+                    notes="Prémio distribuído (ajuste admin)"
+                )
+                db.add(p)
+    db.commit()
+    
+    flash(request, f"Valores atualizados: Caixa={caixa}€, Prémio Utilizado={premio_utilizado}€", "success")
+    return RedirectResponse(url="/admin/adjust-values", status_code=302)
 
 
 @router.get("/admin/users", response_class=HTMLResponse)
