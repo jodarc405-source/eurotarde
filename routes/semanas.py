@@ -15,6 +15,7 @@ async def semanas_page(request: Request, db: Session = Depends(get_db)):
     settings = get_settings()
     week_value = getattr(settings, 'WEEK_VALUE', 1.0)
     current_year = date.today().year
+    is_admin = request.session.get('is_admin', False)
 
     # Build month groups per user
     for uw in weeks_data:
@@ -36,12 +37,18 @@ async def semanas_page(request: Request, db: Session = Depends(get_db)):
         "weeks_data": weeks_data,
         "week_value": week_value,
         "current_year": current_year,
+        "is_admin": is_admin,
     })
 
 
 @router.post("/semanas/update-week-value")
 async def update_week_value(request: Request, week_value: float = Form(...), db: Session = Depends(get_db)):
-    """Update the week value setting."""
+    """Update the week value setting (admin only)."""
+    # Check admin permission
+    if not request.session.get('is_admin', False):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Apenas administradores podem alterar o valor da semana.")
+    
     from config import get_settings
     
     # Update the setting (this would need persistent storage, for now just in memory)

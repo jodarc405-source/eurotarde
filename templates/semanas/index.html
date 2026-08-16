@@ -11,6 +11,7 @@
         </h5>
     </div>
     <div class="card-body">
+        {% if is_admin %}
         <form method="POST" action="/semanas/update-week-value" class="d-flex gap-3 align-items-end flex-wrap">
             <div>
                 <label for="week_value" class="form-label small fw-bold">Valor de cada semana (€)</label>
@@ -31,6 +32,24 @@
                 As semanas são contadas de 1 de janeiro a 31 de dezembro de {{ current_year }}.
             </span>
         </form>
+        {% else %}
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div>
+                <label class="form-label small fw-bold">Valor de cada semana (€)</label>
+                <input type="number" 
+                       class="form-control form-control-sm" 
+                       step="0.01" 
+                       min="0.01" 
+                       value="{{ week_value }}"
+                       style="width: 120px;"
+                       readonly>
+            </div>
+            <span class="text-muted small align-self-center">
+                Cada semana custa <strong>{{ '{:,.2f}'.format(week_value) }}€</strong>. 
+                As semanas são contadas de 1 de janeiro a 31 de dezembro de {{ current_year }}.
+            </span>
+        </div>
+        {% endif %}
     </div>
 </div>
 
