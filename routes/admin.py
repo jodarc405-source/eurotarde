@@ -15,30 +15,6 @@ from services.flash_service import flash
 router = APIRouter()
 
 
-# ===== TEMPORARY: Reset admin password (remove after use) =====
-@router.get("/admin/reset-admin-password", response_class=HTMLResponse)
-async def reset_admin_password_page(request: Request, db: Session = Depends(get_db)):
-    return request.app.state.templates.TemplateResponse("admin/reset_admin_password.html", {
-        "request": request,
-    })
-
-
-@router.post("/admin/reset-admin-password")
-async def reset_admin_password_submit(
-    request: Request,
-    new_password: str = Form(...),
-    db: Session = Depends(get_db),
-):
-    admin = db.query(User).filter(User.username == "admin").first()
-    if admin:
-        admin.hashed_password = hash_password(new_password)
-        db.commit()
-        flash(request, f"Password do admin alterada para: {new_password}", "success")
-    else:
-        flash(request, "Utilizador admin não encontrado!", "danger")
-    return RedirectResponse(url="/admin/reset-admin-password", status_code=302)
-
-
 @router.get("/admin/users", response_class=HTMLResponse)
 async def list_users(request: Request, db: Session = Depends(get_db)):
     users = get_all_users(db)
